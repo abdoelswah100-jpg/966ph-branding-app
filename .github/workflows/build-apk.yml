@@ -1,0 +1,80 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install packages
+        run: npm install --no-audit --no-fund
+
+      - name: Download Cairo font
+        run: |
+          mkdir -p www/fonts
+          curl -fsSL -o www/fonts/Cairo.ttf "https://github.com/google/fonts/raw/main/ofl/cairo/Cairo%5Bslnt%2Cwght%5D.ttf" || echo "Cairo font download failed, device font will be used"
+
+      - name: Add Android platform
+        run: npx cap add android
+
+      - name: Icons and splash screens
+        run: npx @capacitor/assets generate --android --iconBackgroundColor "#0A1F7A" --iconBackgroundColorDark "#0A1F7A" --splashBackgroundColor "#061233" --splashBackgroundColorDark "#061233"
+
+      - name: Version, permissions and storage
+        run: |
+          VN=$(node -p "require('./package.json').appVersion")
+          VC=$(node -p "require('./package.json').versionCode")
+          echo "VN=$VN" >> $GITHUB_ENV
+          sed -i -E "s/versionCode [0-9]+/versionCode $VC/; s/versionName \"[^\"]*\"/versionName \"$VN\"/" android/app/build.gradle
+          M=android/app/src/main/AndroidManifest.xml
+          sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />#' $M
+          sed -i 's#<application#<application android:requestLegacyExternalStorage="true"#' $M
+          grep -n "permission\|requestLegacy" $M
+
+      - name: Sync web app
+        run: npx cap sync android
+
+      - name: Build release APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Sign APK
+        env:
+          KS_PASS_SECRET: ${{ secrets.KS_PASS }}
+        run: |
+          KS_PASS="${KS_PASS_SECRET:-$(cat keystore/password.txt)}"
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          $BT/zipalign -p -f 4 android/app/build/outputs/apk/release/app-release-unsigned.apk aligned.apk
+          $BT/apksigner sign --ks keystore/966ph-release.jks --ks-key-alias 966ph --ks-pass pass:$KS_PASS --key-pass pass:$KS_PASS --out "966Ph-Branding-$VN.apk" aligned.apk
+          $BT/apksigner verify --print-certs "966Ph-Branding-$VN.apk" | head -3
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 966Ph-Branding-${{ env.VN }}
+          path: 966Ph-Branding-${{ env.VN }}.apk
+
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VN }}
+          name: 966Ph Branding ${{ env.VN }}
+          files: 966Ph-Branding-${{ env.VN }}.apk
