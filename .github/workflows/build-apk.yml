@@ -24,7 +24,8 @@ jobs:
           java-version: 17
 
       - name: Install packages
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --legacy-peer-deps --loglevel=error 2>&1 | tee npm-install.log; test ${PIPESTATUS[0]} -eq 0
+        shell: bash
 
       - name: Download Cairo font
         run: |
@@ -71,6 +72,16 @@ jobs:
         with:
           name: 966Ph-Branding-${{ env.VN }}
           path: 966Ph-Branding-${{ env.VN }}.apk
+
+      - name: Upload log on failure
+        if: failure()
+        run: |
+          cat npm-install.log > build-debug.txt 2>/dev/null || true
+          ls -la >> build-debug.txt
+          gh release delete debug-log -y --cleanup-tag 2>/dev/null || true
+          gh release create debug-log build-debug.txt --title "debug log" --notes "build failure log" --prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Release
         uses: softprops/action-gh-release@v2

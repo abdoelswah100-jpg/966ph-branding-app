@@ -12,7 +12,7 @@
     "@capacitor/core": "^6.1.2",
     "@capacitor/filesystem": "^6.0.1",
     "@capacitor/share": "^6.0.2",
-    "@capgo/capacitor-native-biometric": "6.0.5"
+    "@capgo/capacitor-native-biometric": "^6.0.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
