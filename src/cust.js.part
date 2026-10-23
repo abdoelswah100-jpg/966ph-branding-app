@@ -189,7 +189,7 @@ function custChange(x){
  if(x.id=='cnp'&&V.ce){const n=(V.ce.note||'').replace(NOPAPER,'').replace(/^\s*[·⚠]\s*|\s*[·]\s*$/g,'').trim();V.ce.note=x.checked?[NOPAPER,n].filter(Boolean).join(' · '):n;return 1}
  if(x.dataset.cc){const C=CU();C.cfg[x.dataset.cc]=x.type=='number'?(+x.value||0):x.value;svq();return 1}
  if(x.dataset.cmopen){cMo().open=Math.round((+x.value||0)*100)/100;sv();render();return 1}
- if(x.dataset.cf&&V.ce){cField(x);if(x.dataset.cf=='kind'||x.dataset.cf=='tm'||x.dataset.cf=='comp')render();return 1}
+ if(x.dataset.cf&&V.ce){cField(x);if(x.dataset.cf=='kind'){render();return 1}const q=k=>document.querySelector(`[data-cf=${k}]`);['desc','car'].forEach(k=>{const e=q(k);if(e&&e!==x)e.value=V.ce[k]||''});const kd=q('kind');if(kd)kd.value=V.ce.kind;return 1}
  return 0}
 function cField(x){const d=V.ce,k=x.dataset.cf,old=d.kind;if(k=='note'){const np=(d.note||'').includes(NOPAPER);d.note=[np?NOPAPER:'',x.value.trim()].filter(Boolean).join(' · ');return}d[k]=x.value;
  if(k=='comp'&&x.value){const m=CU().mem[cnk(x.value)],auto=!d.desc||d.desc==descOf(old,d.tm,'');if(m){d.kind=m.kind;d.desc=descOf(m.kind,d.tm,x.value)}else{d.kind=kindOf(x.value,'');if(auto)d.desc=descOf(d.kind,d.tm,'')}if(d.kind=='وقود'&&!d.car)d.car=CU().cfg.car}
