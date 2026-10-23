@@ -52,12 +52,12 @@ with sync_playwright() as pw:
     res['month_rows'] = pg.locator('button.mrow[data-go]').count()
     open('s3/month.pdf', 'wb').write(b64(pg, "buildPdf(monthRepEl(V.mo),'تقرير شهر')"))
     # calc
-    pg.click('button[data-tab="calc"]')
+    pg.evaluate("V={v:'calc',op:{},dr:{},q:V.q};render()");pg.wait_for_timeout(200)
     pg.fill('input[data-cr="0:h"]', '250'); pg.fill('input[data-cr="0:w"]', '120'); pg.fill('input[data-cr="0:q"]', '4')
     pg.fill('#cfp', '85'); pg.wait_for_timeout(100); sh('08_calc')
     res['calc_tiles'] = pg.locator('#crtiles').inner_text().replace('\n', ' | ')
     pg.select_option('#crph', index=0); pg.click('button[data-crsend]'); pg.wait_for_timeout(150)
-    pg.click('button[data-tab="calc"]'); dlg = []
+    pg.evaluate("V={v:'calc',op:{},dr:{},q:V.q};render()");pg.wait_for_timeout(200); dlg = []
     pg.once('dialog', lambda d: (dlg.append(d.message), d.dismiss()))
     pg.click('button[data-crsend]'); pg.wait_for_timeout(150); res['dup_warn'] = dlg[0][:40] if dlg else None
     # review

@@ -76,7 +76,7 @@ with sync_playwright() as pw:
     pg.evaluate("DB.cfg.lang='en';sv();V={v:'gen',op:{},dr:{},q:V.q};render()");pg.wait_for_timeout(500)
     res['en_gen']=pg.evaluate("document.body.innerText.includes('Sound and vibration')")
     pg.evaluate("V={v:'bk',op:{},dr:{},q:V.q};render()");pg.wait_for_timeout(500)
-    t=pg.evaluate("document.body.innerText");res['en_bk_ar']=re.findall(r'[ء-ي][ء-ي ]{3,}',t)[:8]
+    pg.evaluate("document.querySelectorAll('.toast').forEach(x=>x.remove())");t=pg.evaluate("document.body.innerText");res['en_bk_ar']=re.findall(r'[ء-ي][ء-ي ]{3,}',t)[:8]
     br.close()
 for k,v in res.items(): print(k,'=>',v)
 print('dialogs',dl);print('ERRS',errs[:10])

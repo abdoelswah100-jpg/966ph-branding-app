@@ -1,0 +1,198 @@
+// ---------- custody (العهدة): monthly expense sheet per supervisor ----------
+const CK=['وجبات','وقود','شحن','سكن','مشتريات','سيارة','تنقلات','إيجار'];
+const CKC={'وجبات':'FDE7D9','وقود':'DCEBFA','شحن':'E5E1F5','سكن':'DDF1E4','مشتريات':'FFF4D1','سيارة':'DCEBFA','تنقلات':'F3E3EE','إيجار':'EFEFEF'};
+const NOPAPER='لا توجد فاتورة ورقية الرجاء الطباعة';
+function CU(){const c=DB.cust=DB.cust||{};c.m=c.m||{};c.mem=c.mem||{};c.cfg=Object.assign({car:'متسوبيشي ( ب ق ن 2890 )',region:'المنطقة الوسطى (الرياض)',sup:DB.cfg.dsup||'عبدالله السواح',base:10000,min:2000},c.cfg||{});if(!c.cur)c.cur=MN();if(!c.m[c.cur])c.m[c.cur]={open:c.cfg.base,why:'',items:[]};return c}
+const cMo=()=>CU().m[CU().cur];
+const cMoLab=k=>{const[y,m]=String(k).split('-');return `${+m} / ${y}`};
+const cNext=k=>{const[y,m]=k.split('-').map(Number);return m==12?`${y+1}-01`:`${y}-${z2(m+1)}`};
+const cSort=L=>L.sort((a,b)=>(a.dt||'').localeCompare(b.dt||'')||(a.tm||'99').localeCompare(b.tm||'99')||(a.at||'').localeCompare(b.at||''));
+const cTot=M=>Math.round(M.items.reduce((a,x)=>a+(+x.amt||0),0)*100)/100;
+const cRem=M=>Math.round(((+M.open||0)-cTot(M))*100)/100;
+const f2=v=>(+v||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const cOut=(x,k)=>x.dt&&x.dt.slice(0,7)<k?'old':x.dt&&x.dt.slice(0,7)>k?'next':'';
+function mealOf(tm){const h=parseInt(String(tm||'').split(':')[0],10);if(isNaN(h))return '';return h<4?'عشاء':h<11?'فطار':h<19?'غداء':'عشاء'}
+const cnk=t=>anorm(t).replace(/[ـ]/g,'');
+function kindOf(comp,desc){const m=CU().mem[cnk(comp)];if(m&&m.kind)return m.kind;const t=(comp||'')+' '+(desc||'');
+ for(const[k,w] of [['وقود',['وقود','محطه','محطة','بترول','الدريس','ساسكو','نفط','diesel','ديزيل','بنزين','sasco','aldrees']],['شحن',['شحن','السيف','alsaif','express','بريد']],['سكن',['شقق','فندق','أجنحة','اجنحة','سكن','apartments','suites','hotel','نزل']],['تنقلات',['باص','تذكرة','حافلات','درب الوطن','نقل جماعي','سابتكو']],['سيارة',['مغسلة','غسيل','ورشة','زيوت','كفرات']],['وجبات',['مطعم','مطاعم','شاورما','فوال','بوفيه','كافيه','كوفي','مخبز','حلويات','وجبات','بروست','كبسة','بخاري','تموينات','سوبرماركت','اسواق','أسواق','restaurant','shawarma','cafe','house']]])if(w.some(x=>t.toLowerCase().includes(x.toLowerCase())))return k;return 'مشتريات'}
+function descOf(kind,tm,comp){const m=CU().mem[cnk(comp)],ml=mealOf(tm);if(m&&m.desc){if(kind=='وجبات'&&ml)return m.desc.replace(/فطار|غداء|عشاء/,ml);return m.desc}
+ return kind=='وجبات'?(ml||'وجبة')+' عمال الشركة':kind=='وقود'?'ديزيل':kind=='شحن'?'استلام شحن':kind=='سكن'?'سكن عمال الشركة':kind=='تنقلات'?'تنقلات':kind=='سيارة'?'غسيل سيارة':'مشتريات'}
+// ---- ZATCA QR (TLV in base64): 1 seller · 2 VAT no · 3 time · 4 total incl. VAT · 5 VAT
+function zatca(s){try{const b=Uint8Array.from(atob(String(s).trim()),c=>c.charCodeAt(0)),o={};let i=0;while(i+2<=b.length){const t=b[i],l=b[i+1];if(i+2+l>b.length)break;o[t]=new TextDecoder().decode(b.slice(i+2,i+2+l));i+=2+l}
+ if(!o[1]||!o[4]||isNaN(parseFloat(o[4])))return null;const ts=String(o[3]||''),m=ts.match(/(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})/);let dt='',tm='',alt=null;
+ if(m){dt=`${m[1]}-${m[2]}-${m[3]}`;tm=`${m[4]}:${m[5]}`;if(/Z$|[+-]00:?00$/.test(ts)){const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3],+m[4]+3,+m[5]));alt={dt:d.toISOString().slice(0,10),tm:d.toISOString().slice(11,16)}}}
+ return{comp:o[1].trim(),vat:o[2]||'',dt,tm,alt,amt:Math.round(parseFloat(o[4])*100)/100,tax:parseFloat(o[5])||0}}catch(e){return null}}
+function qrGray(id,W,H,th){const g=new Uint8ClampedArray(W*H*4);let hist=th?new Array(256).fill(0):null;const L=new Uint8Array(W*H);for(let i=0,j=0;i<W*H;i++,j+=4){const v=(id[j]*299+id[j+1]*587+id[j+2]*114)/1000|0;L[i]=v;if(hist)hist[v]++}
+ let t=128;if(hist){let sum=0,sb=0,wb=0,mx=0;for(let i=0;i<256;i++)sum+=i*hist[i];for(let i=0;i<256;i++){wb+=hist[i];if(!wb)continue;const wf=W*H-wb;if(!wf)break;sb+=i*hist[i];const mb=sb/wb,mf=(sum-sb)/wf,v=wb*wf*(mb-mf)*(mb-mf);if(v>mx){mx=v;t=i}}}
+ for(let i=0,j=0;i<W*H;i++,j+=4){const v=hist?(L[i]>t?255:0):L[i];g[j]=g[j+1]=g[j+2]=v;g[j+3]=255}return g}
+async function qrFromBlob(blob){if(!window.jsQR)return null;const u=URL.createObjectURL(blob);try{const im=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=u});
+  const cv=document.createElement('canvas'),x=cv.getContext('2d',{willReadFrequently:true}),W0=im.naturalWidth,H0=im.naturalHeight,R=[];
+  const tryR=(sx,sy,sw,sh,sc,th)=>{const W=Math.max(1,Math.round(sw*sc)),H=Math.max(1,Math.round(sh*sc));if(W*H>9e6)return null;cv.width=W;cv.height=H;x.imageSmoothingQuality='high';x.drawImage(im,sx,sy,sw,sh,0,0,W,H);const d=qrGray(x.getImageData(0,0,W,H).data,W,H,th);const r=jsQR(d,W,H,{inversionAttempts:th?'dontInvert':'attemptBoth'});return r&&r.data?r.data:null};
+  const big=Math.max(W0,H0),base=big>2200?2200/big:1;
+  for(const[sc,th] of [[base,0],[base,1],[base*2,1],[base*1.5,0]]){const r=tryR(0,0,W0,H0,Math.min(sc,4000/big),th);if(r){R.push(r);const z=zatca(r);if(z)return z}}
+  for(let gy=0;gy<4;gy++)for(let gx=0;gx<3;gx++){const sw=W0/2,sh=H0/2.5,sx=gx*W0/4,sy=gy*(H0-sh)/3;const r=tryR(sx,sy,sw,sh,Math.min(3,1800/Math.max(sw,sh)),1);if(r){const z=zatca(r);if(z)return z}}
+  for(let gy=0;gy<3;gy++)for(let gx=0;gx<2;gx++){const sw=W0*2/3,sh=H0/2,sx=gx*W0/3,sy=gy*H0/4;for(const th of [1,0]){const r=tryR(sx,sy,sw,sh,Math.min(3,2400/Math.max(sw,sh)),th);if(r){const z=zatca(r);if(z)return z}}}
+  return null}catch(e){console.warn(e);return null}finally{URL.revokeObjectURL(u)}}
+// ---- invoice images (IndexedDB, key cimg:<item>:<n>)
+async function cImgPut(id,blob){const L=[];const u=URL.createObjectURL(blob);try{const r=await shrink(u,1600)||null;if(!r)return null;const b=await (await fetch(r)).blob();const k='cimg:'+id+':'+Date.now()+Math.random().toString(36).slice(2,6);if(await idbSet(k,b))return k}finally{URL.revokeObjectURL(u)}return null}
+const CIU={};
+async function cImgUrl(k){if(CIU[k])return CIU[k];const b=await idbGet(k);if(!b)return '';return CIU[k]=URL.createObjectURL(b)}
+async function cImgFill(){for(const e of document.querySelectorAll('img[data-cimg]')){const u=await cImgUrl(e.dataset.cimg);if(u)e.src=u}}
+// ---- editor queue: each picked image becomes one draft invoice
+function cDraft(o){const M=cMo(),k=CU().cur,today=TD(),dt=o.dt||(today.slice(0,7)==k?today:k+'-01'),kind=o.kind||kindOf(o.comp,o.desc),tm=o.tm||'';
+ return Object.assign({id:Date.now()+Math.floor(Math.random()*1000),dt,tm,comp:'',amt:'',car:'',ph:'',ref:'',note:'',imgs:[],src:'manual'},o,{kind,desc:o.desc||descOf(kind,tm,o.comp||''),car:o.car!=null&&o.car!==''?o.car:(kind=='وقود'?CU().cfg.car:'')})}
+async function cFromImages(files){const Q=[];const t=toast(`<span>جاري قراءة ${files.length} صورة…</span>`);try{for(const f of files){const z=await qrFromBlob(f);const d=cDraft(z?{comp:z.comp,amt:z.amt,dt:z.dt,tm:z.tm,_alt:z.alt,src:'qr'}:{src:'img'});const k=await cImgPut(d.id,f);if(k)d.imgs=[k];d._qr=!!z;Q.push(d)}}finally{t.remove()}
+ if(!Q.length)return;V.cq=Q;V.ce=Q.shift();goV(Object.assign(V,{v:'ced'}))}
+function cOpen(d){V.ce=d;V.cq=V.cq||[];goV(Object.assign(V,{v:'ced'}))}
+function cDup(d){const M=cMo();return M.items.find(x=>x.id!=d.id&&((d.ref&&x.ref&&cnk(x.ref)==cnk(d.ref))||(Math.abs((+x.amt||0)-(+d.amt||0))<0.005&&x.dt==d.dt&&(cnk(x.comp)==cnk(d.comp)||x.kind==d.kind||cnk(x.desc)==cnk(d.desc)))))}
+function cSave(){const d=V.ce;if(!d)return;const amt=Math.round(parseFloat(String(d.amt).replace(/,/g,''))*100)/100;if(!(amt>0))return alert('اكتب المبلغ');if(!/^\d{4}-\d{2}-\d{2}$/.test(d.dt||''))return alert('اختار التاريخ');if(!String(d.desc||'').trim()||!String(d.comp||'').trim())return alert('اكتب البيان واسم الشركة');
+ const x=Object.assign({},d,{amt,desc:d.desc.trim(),comp:d.comp.trim(),at:d.at||nowIso()});['_alt','_qr','_new'].forEach(k=>delete x[k]);
+ const du=cDup(x);if(du&&!confirm(`⚠ فيه فاتورة شبهها متسجلة: ${du.desc} · ${du.comp} · ${f2(du.amt)} · ${du.dt}${du.ref?' · '+du.ref:''}.\nتسجلها برضه؟`))return;
+ const M=cMo(),i=M.items.findIndex(y=>y.id==x.id);if(i>=0)M.items[i]=x;else M.items.push(x);cSort(M.items);
+ CU().mem[cnk(x.comp)]={desc:x.desc,kind:x.kind};sv();snd('ok');
+ const nx=(V.cq||[]).shift();if(nx){V.ce=nx;render();scrollTo(0,0);toastT('✓ اتحفظت. الفاتورة اللي بعدها');return}V.ce=null;goV({v:'cust',op:{},dr:{},q:V.q,from:V.from});toastT('✓ اتحفظت الفاتورة')}
+// ---- screens
+function custHtml(){const C=CU(),M=cMo(),k=C.cur,tot=cTot(M),rem=cRem(M),L=M.items,ks=Object.keys(C.m).sort().reverse();
+ const rows=L.map((x,i)=>{const o=cOut(x,k),np=(x.note||'').includes('فاتورة ورقية');return `<tr class="${o?'co-'+o:''}" data-ced="${x.id}"><td>${i+1}</td><td class="cdt">${esc(x.dt.slice(8,10)+'-'+x.dt.slice(5,7))}${x.tm?`<small>${esc(x.tm)}</small>`:''}</td><td>${esc(x.desc)}<small class="ck" style="background:#${CKC[x.kind]||'EFEFEF'}">${esc(x.kind)}</small>${np?'<small class="cnp">⚠ لا توجد فاتورة ورقية</small>':''}</td><td>${esc(x.comp)}${x.car?`<small>${esc(x.car)}</small>`:''}</td><td class="cam"><b>${f2(x.amt)}</b>${x.imgs&&x.imgs.length?'<small>📎</small>':''}</td></tr>`}).join('');
+ return `<div class="wcard cust"><div class="cuh"><b>كشف مصروفات العهدة — ${esc(C.cfg.region)}</b><small>شهر ${cMoLab(k)} · ${esc(C.cfg.sup)}</small></div>
+ <div class="ckpi"><div><small>رصيد بداية الشهر</small><b class="c-open">${f2(M.open)}</b></div><div><small>إجمالي المصروف</small><b class="c-exp">${f2(tot)}</b></div><div><small>المتبقي في العهدة</small><b class="c-rem">${f2(rem)}</b></div><div><small>عدد الفواتير</small><b>${L.length}</b></div></div>
+ <div class="cbtn"><button class="pr" data-cscan="1">${ic('cam')}امسح QR بالكاميرا</button><button class="pr" data-pick="cimgs">${ic('img')}فاتورة من صورة</button><button data-cman="1">${ic('edit')}إضافة يدوي</button></div>
+ <input type="file" id="cimgs" accept="image/*" multiple hidden><input type="file" id="cjson" accept=".json,application/json" hidden></div>
+ <div class="wcard"><div class="cmo"><label>الشهر<select id="cmosel">${ks.map(x=>`<option value="${x}"${x==k?' selected':''}>${cMoLab(x)}</option>`).join('')}</select></label><button data-cnew="1">${ic('add')}بدء شهر جديد</button></div>
+ ${V.cnew?cNewHtml():''}
+ ${L.length?`<div class="sc"><table class="ctab"><tr><th>م</th><th>التاريخ</th><th>البيان</th><th>الشركة</th><th>المبلغ</th></tr>${rows}<tr class="tot"><td colspan="4">الإجمالي</td><td class="c-exp">${f2(tot)}</td></tr><tr class="tot"><td colspan="4">المتبقي في رصيد العهدة</td><td class="c-rem">${f2(rem)}</td></tr></table></div><p class="sub">اضغط على أي فاتورة علشان تعدّلها أو تمسحها. ■ أحمر = تاريخها قبل الشهر · ■ أزرق = بعد الشهر.</p>`:'<p class="em">لسه مفيش فواتير في الشهر ده.</p>'}
+ <div class="cshare"><button class="pr" data-cxl="share">${ic('sheet')}مشاركة Excel</button><button class="pr" data-cpdf="share">${ic('share')}مشاركة PDF</button><button data-cxl="save">${ic('download')}حفظ Excel</button><button data-cpdf="save">${ic('download')}حفظ PDF</button></div></div>
+ <details class="pinfo" data-id="__cset"${V.op.__cset?' open':''}><summary>${ic('gear')} إعدادات العهدة والاستيراد</summary><div class="fm">
+ <label>المنطقة في عنوان الكشف<input data-cc="region" value="${esc(C.cfg.region)}"></label><label>اسم المشرف<input data-cc="sup" value="${esc(C.cfg.sup)}"></label><label>لوحة العربية (للديزل)<input data-cc="car" value="${esc(C.cfg.car)}"></label>
+ <div class="c2"><label>رصيد العهدة الكامل<input type="number" inputmode="decimal" data-cc="base" value="${C.cfg.base}"></label><label>أقل متبقي ينقل للشهر الجديد<input type="number" inputmode="decimal" data-cc="min" value="${C.cfg.min}"></label></div>
+ <label>رصيد بداية شهر ${cMoLab(k)}<input type="number" inputmode="decimal" data-cmopen="1" value="${M.open}"></label>
+ <button data-pick="cjson">${ic('upload')}استيراد فواتير من ملف (اللي Claude بيجهّزه)</button></div></details>`}
+function cNewHtml(){const C=CU(),M=cMo(),r=cRem(M),sg=r>C.cfg.min?r:C.cfg.base,nk2=cNext(C.cur);return `<div class="cnew"><b>بدء شهر ${cMoLab(nk2)}</b><p>المتبقي من شهر ${cMoLab(C.cur)}: <b class="c-rem">${f2(r)}</b>. ${r>C.cfg.min?`أكتر من ${f2(C.cfg.min)}، فالاقتراح يبدأ بالمتبقي.`:`أقل من ${f2(C.cfg.min)}، فالاقتراح يبدأ بالعهدة كاملة.`}</p>
+ <div class="cbtn"><button class="${sg==r?'pr':''}" data-cnewgo="${r}">ابدأ بالمتبقي ${f2(r)}</button><button class="${sg==r?'':'pr'}" data-cnewgo="${C.cfg.base}">ابدأ بـ ${f2(C.cfg.base)}</button></div><label>مبلغ تاني<input type="number" inputmode="decimal" id="cnewv"></label><div class="cbtn"><button data-cnewgo="v">ابدأ بالمبلغ ده</button><button data-cnew="0">إلغاء</button></div></div>`}
+function cedHtml(){const d=V.ce;if(!d)return '';const C=CU(),comps=[...new Set(Object.values(C.m).flatMap(m=>m.items.map(x=>x.comp)))].sort(),descs=[...new Set(Object.values(C.m).flatMap(m=>m.items.map(x=>x.desc)))].sort(),ml=mealOf(d.tm),np=(d.note||'').includes(NOPAPER),q=V.cq||[];
+ return `<div class="wcard ced">${q.length?`<p class="sub">فاتورة جديدة · باقي ${q.length} صورة بعدها</p>`:''}
+ ${d.src=='qr'?'<div class="ph"><small>✓ اتقرت البيانات من كود QR الفاتورة. راجعها قبل الحفظ.</small></div>':d.src=='img'?'<div class="alr"><small>⚠ ما قدرتش أقرا كود QR من الصورة. كمّل البيانات يدوي من الصورة.</small></div>':''}
+ ${d.imgs&&d.imgs.length?`<div class="cimgs">${d.imgs.map(k=>`<span><button class="cimgb" data-cimgz="${k}"><img data-cimg="${k}" alt=""></button><button class="np cimgx" data-cimgx="${k}">✕</button></span>`).join('')}</div>`:''}
+ <div class="fm"><div class="c2"><label>التاريخ<input type="date" data-cf="dt" value="${esc(d.dt)}"></label><label>الوقت<input type="time" data-cf="tm" value="${esc(d.tm)}"></label></div>
+ ${d._alt?`<div class="ph"><small>الوقت في الكود ممكن يكون بالتوقيت العالمي. لو الوقت المطبوع على الفاتورة <b>${esc(d._alt.tm)}</b> اضغط هنا:</small><button data-calt="1">استخدم ${esc(d._alt.tm)}</button></div>`:''}
+ <div class="c2"><label>النوع<select data-cf="kind">${CK.map(k=>`<option${k==d.kind?' selected':''}>${k}</option>`).join('')}</select></label><label>المبلغ شامل الضريبة<input type="number" inputmode="decimal" step="0.01" data-cf="amt" value="${esc(d.amt)}"></label></div>
+ <label>البيان${d.kind=='وجبات'&&ml?` <small>(الوقت ده = ${ml})</small>`:''}<input list="cdl" data-cf="desc" value="${esc(d.desc)}"></label><datalist id="cdl">${descs.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+ <label>اسم الشركة<input list="ccl" data-cf="comp" value="${esc(d.comp)}"></label><datalist id="ccl">${comps.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+ <div class="c2"><label>السيارة<input data-cf="car" value="${esc(d.car)}"></label><label>رقم الصيدلية<input inputmode="numeric" data-cf="ph" value="${esc(d.ph)}"></label></div>
+ <label>رقم الفاتورة<input data-cf="ref" value="${esc(d.ref)}"></label>
+ <label class="chk cnpl"><input type="checkbox" id="cnp"${np?' checked':''}> ⚠ لا توجد فاتورة ورقية (الرجاء الطباعة)</label>
+ <label>ملاحظات<input data-cf="note" value="${esc((d.note||'').replace(NOPAPER,'').replace(/^\s*[·⚠]\s*/,'').trim())}"></label>
+ <div class="cbtn"><button class="pr" data-cpic="1">${ic('cam')}إرفاق صورة</button></div><input type="file" id="cimg1" accept="image/*" multiple hidden></div>
+ <div class="tt"><button class="pr big" data-csave="1">${ic('check')}حفظ الفاتورة</button>${q.length?'<button data-cskip="1">تخطي</button>':''}<button data-ccancel="1">إلغاء</button>${cMo().items.some(x=>x.id==d.id)?`<button data-cdel="1" style="color:var(--rd)">${ic('trash')}مسح</button>`:''}</div></div>`}
+// ---- camera QR scan (live)
+let CSC=null;
+async function cScan(){if(!window.jsQR)return alert('قارئ QR مش موجود في النسخة دي');if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia))return alert('الكاميرا مش متاحة هنا. استخدم "فاتورة من صورة".');
+ let st;try{st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})}catch(e){return alert('مفيش إذن للكاميرا. اسمح للتطبيق باستخدام الكاميرا من إعدادات الموبايل، أو استخدم "فاتورة من صورة".')}
+ const o=document.createElement('div');o.className='ovl cscan';o.innerHTML='<video playsinline muted></video><div class="cfr"></div><p>وجّه الكاميرا على كود QR الفاتورة</p><div class="cbtn"><button class="pr" data-cshot="1">📷 صوّر من غير QR</button><button data-cscanx="1">✕ إغلاق</button></div>';document.body.appendChild(o);
+ const v=o.querySelector('video');v.srcObject=st;await v.play().catch(()=>{});const cv=document.createElement('canvas'),x=cv.getContext('2d',{willReadFrequently:true});
+ const stop=()=>{st.getTracks().forEach(t=>t.stop());o.remove();CSC=null};
+ const frame=()=>new Promise(ok=>{cv.width=v.videoWidth;cv.height=v.videoHeight;x.drawImage(v,0,0);cv.toBlob(b=>ok(b),'image/jpeg',0.85)});
+ const done=async z=>{const b=await frame();stop();const d=cDraft(z?{comp:z.comp,amt:z.amt,dt:z.dt,tm:z.tm,_alt:z.alt,src:'qr'}:{src:'img'});const k=b?await cImgPut(d.id,b):null;if(k)d.imgs=[k];snd(z?'ok':'tick');V.cq=[];cOpen(d)};
+ CSC={stop,shot:()=>done(null)};
+ const loop=()=>{if(!CSC)return;if(v.videoWidth){const W=Math.min(960,v.videoWidth),H=Math.round(v.videoHeight*W/v.videoWidth);cv.width=W;cv.height=H;x.drawImage(v,0,0,W,H);const r=jsQR(x.getImageData(0,0,W,H).data,W,H,{inversionAttempts:'dontInvert'});if(r&&r.data){const z=zatca(r.data);if(z){done(z);return}}}setTimeout(loop,180)};loop()}
+// ---- Excel (same layout every time) ----
+function custXlsx(k){const C=CU(),M=C.m[k],L=M.items.slice(),N=L.length,first=9,last=first+Math.max(N,1)-1,tot=last+1,tt=cTot(M),rm=cRem(M);
+ const F=[],FI={},font=(sz,b,c)=>{const key=sz+'|'+(b?1:0)+'|'+(c||'000000');if(FI[key]==null){FI[key]=F.length;F.push(`<font>${b?'<b/>':''}<sz val="${sz}"/><color rgb="FF${c||'000000'}"/><name val="Arial"/><family val="2"/></font>`)}return FI[key]};
+ const P=['<fill><patternFill patternType="none"/></fill>','<fill><patternFill patternType="gray125"/></fill>'],PI={},fill=c=>{if(!c)return 0;if(PI[c]==null){PI[c]=P.length;P.push(`<fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor indexed="64"/></patternFill></fill>`)}return PI[c]};
+ const X=['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'],XI={},st=(o)=>{const f=font(o.sz||10,o.b,o.c),p=fill(o.bg),n=o.n||0,bd=o.nb?0:1,key=[f,p,n,bd].join('|');if(XI[key]==null){XI[key]=X.length;X.push(`<xf numFmtId="${n}" fontId="${f}" fillId="${p}" borderId="${bd}" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"${n?' applyNumberFormat="1"':''}><alignment horizontal="center" vertical="center" wrapText="1" readingOrder="2"/></xf>`)}return XI[key]};
+ font(10,0,'000000');
+ const NAVY='0B1B33',GOLD='F2B705',BLUE='1F3864',RED='8B0000',GREEN='1E7B45',ZEB='F5F7FA',CARD='EEF2F7',OPENBG='FFF6D6',MUTE='5B6B80';
+ const serial=d=>{const[y,m,dd]=d.split('-').map(Number);return Math.round((Date.UTC(y,m-1,dd)-Date.UTC(1899,11,30))/864e5)};
+ const R={},cell=(r,c,v,s,f)=>{(R[r]=R[r]||[]).push({c,v,s,f})},merges=[];
+ const ref=(c,r)=>colL(c)+r;
+ // title
+ cell(1,0,`كشف مصروفات العهدة — ${C.cfg.region} — شهر ${cMoLab(k)}`,st({sz:15,b:1,c:'FFFFFF',bg:NAVY,nb:1}));merges.push('A1:K1');
+ cell(2,0,`المشرف: ${C.cfg.sup}  ·  966 Motors — صيدليات الدواء  ·  تاريخ الكشف: ${TD().split('-').reverse().join('-')}`,st({sz:10,c:MUTE,nb:1}));merges.push('A2:K2');
+ const cards=[[0,2,'رصيد بداية الشهر','H8',+M.open,4,BLUE],[3,3,'إجمالي المصروف',`G${tot}`,tt,4,RED],[4,6,'المتبقي في العهدة',`H${tot}`,rm,4,GREEN],[7,8,'عدد الفواتير',`COUNT(G${first}:G${last})`,N,1,NAVY],[9,10,'نسبة المصروف',`IF(H8=0,0,G${tot}/H8)`,M.open?tt/M.open:0,9,NAVY]];
+ cards.forEach(([a,b,lab,f,v,n,c])=>{for(let i=a;i<=b;i++){cell(4,i,i==a?lab:'',st({sz:9,b:1,c:MUTE,bg:CARD}));cell(5,i,i==a?v:'',st({sz:14,b:1,c,bg:CARD,n}),i==a?f:null)}if(b>a){merges.push(`${ref(a,4)}:${ref(b,4)}`,`${ref(a,5)}:${ref(b,5)}`)}});
+ cell(6,0,'■ أحمر = فاتورة تاريخها قبل الشهر     ■ أزرق = فاتورة تاريخها بعد الشهر     ⚠ = لا توجد فاتورة ورقية (الرجاء الطباعة)',st({sz:9,b:1,c:MUTE,nb:1}));merges.push('A6:K6');
+ const H=['م','التاريخ','الوقت','البيان','النوع','اسم الشركة','المصروف (ر.س)','الرصيد بعد المصروف','السيارة','رقم الصيدلية','رقم الفاتورة / ملاحظات'];
+ H.forEach((h,i)=>cell(7,i,h,st({b:1,c:'FFFFFF',bg:NAVY})));
+ for(let i=0;i<11;i++)cell(8,i,i==0?'رصيد بداية الشهر':i==7?+M.open:'',st({b:1,c:i==7?BLUE:NAVY,bg:OPENBG,sz:i==7?11:10,n:i==7?4:0}));merges.push('A8:F8');
+ let bal=+M.open||0;
+ (N?L:[null]).forEach((x,j)=>{const r=first+j,z=j%2?ZEB:null;if(!x){for(let i=0;i<11;i++)cell(r,i,'',st({bg:z}));return}bal=Math.round((bal-(+x.amt||0))*100)/100;
+  const nt=(x.note||'').includes('فاتورة ورقية')?'⚠ '+x.note.replace(/^⚠\s*/,''):x.note||'',nr=[nt,x.ref].filter(Boolean).join(' · ');
+  const V0=[j+1,serial(x.dt),x.tm||'',x.desc,x.kind,x.comp,+x.amt,bal,x.car||'',x.ph||'',nr];
+  V0.forEach((v,i)=>cell(r,i,v,st({bg:i==4?(CKC[x.kind]||'EFEFEF'):z,b:i==6||i==7||i==4,sz:i==4?9:10,c:i==7?MUTE:'000000',n:i==1?164:(i==6||i==7)?4:0}),i==7?`H${r-1}-G${r}`:null))});
+ for(let i=0;i<11;i++)cell(tot,i,i==0?'الإجمالي':i==6?tt:i==7?rm:i==8?'← المتبقي في رصيد العهدة':'',st({b:1,sz:12,c:i==6?RED:i==7?GREEN:NAVY,bg:GOLD,n:i==6||i==7?4:0}),i==6?`SUM(G${first}:G${last})`:i==7?`H8-G${tot}`:null);
+ merges.push(`A${tot}:F${tot}`,`I${tot}:K${tot}`);
+ const sg=tot+2;[['A','D','توقيع المشرف: ....................'],['E','H','مراجعة المحاسب: ....................'],['I','K','اعتماد المدير: ....................']].forEach(([a,b,t])=>{const ci=a.charCodeAt(0)-65;cell(sg,ci,t,st({c:MUTE,nb:1}));merges.push(`${a}${sg}:${b}${sg}`)});
+ const W=[5,11,7,30,10,27,12,14,20,10,30],HT={1:34,2:20,4:18,5:26,7:30,8:24,[tot]:28};
+ const cv=x=>{if(x.f)return `<f>${xe(x.f)}</f><v>${x.v}</v>`;return ''};
+ const rowsXml=Object.keys(R).map(Number).sort((a,b)=>a-b).map(r=>`<row r="${r}"${HT[r]||r>=first&&r<=last?` ht="${HT[r]||21}" customHeight="1"`:''}>${R[r].sort((a,b)=>a.c-b.c).map(x=>{const rf=ref(x.c,r);if(x.f)return `<c r="${rf}" s="${x.s}"><f>${xe(x.f)}</f><v>${x.v}</v></c>`;return typeof x.v=='number'?`<c r="${rf}" s="${x.s}"><v>${x.v}</v></c>`:x.v===''?`<c r="${rf}" s="${x.s}"/>`:`<c r="${rf}" s="${x.s}" t="inlineStr"><is><t xml:space="preserve">${xe(x.v)}</t></is></c>`}).join('')}</row>`).join('');
+ const cf=N?['A','B','D','F'].map((c,i)=>`<conditionalFormatting sqref="${c}${first}:${c}${last}"><cfRule type="expression" dxfId="0" priority="${i*2+1}"><formula>$B${first}&lt;DATE(${k.slice(0,4)},${+k.slice(5,7)},1)</formula></cfRule><cfRule type="expression" dxfId="1" priority="${i*2+2}"><formula>$B${first}&gt;=DATE(${cNext(k).slice(0,4)},${+cNext(k).slice(5,7)},1)</formula></cfRule></conditionalFormatting>`).join('')+`<conditionalFormatting sqref="K${first}:K${last}"><cfRule type="containsText" dxfId="2" priority="9" operator="containsText" text="فاتورة ورقية"><formula>NOT(ISERROR(SEARCH("فاتورة ورقية",K${first})))</formula></cfRule></conditionalFormatting>`:'';
+ const sheet1=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><sheetViews><sheetView rightToLeft="1" workbookViewId="0"><pane ySplit="7" topLeftCell="A8" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${W.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${rowsXml}</sheetData><mergeCells count="${merges.length}">${merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>${cf}<printOptions horizontalCentered="1"/><pageMargins left="0.3" right="0.3" top="0.4" bottom="0.4" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="landscape" fitToWidth="1" fitToHeight="0"/><headerFooter><oddFooter>&amp;Cصفحة &amp;P من &amp;N</oddFooter></headerFooter></worksheet>`;
+ // summary sheet
+ const used=CK.filter(c=>L.some(x=>x.kind==c)),SR=[];let s2='';
+ const s2c=(r,c,v,s,f)=>`<c r="${ref(c,r)}" s="${s}"${f?'':typeof v=='number'?'':' t="inlineStr"'}>${f?`<f>${xe(f)}</f><v>${v}</v>`:typeof v=='number'?`<v>${v}</v>`:`<is><t>${xe(v)}</t></is>`}</c>`;
+ s2+=`<row r="1" ht="28" customHeight="1">${[0,1,2,3].map(i=>s2c(1,i,i?'':`ملخص المصروف حسب النوع — شهر ${cMoLab(k)}`,st({sz:13,b:1,c:'FFFFFF',bg:NAVY}))).join('')}</row>`;
+ s2+=`<row r="3">${['النوع','عدد الفواتير','الإجمالي (ر.س)','النسبة'].map((h,i)=>s2c(3,i,h,st({b:1,c:'FFFFFF',bg:NAVY}))).join('')}</row>`;
+ const rg=`'العهدة'!E${first}:E${last}`,vg=`'العهدة'!G${first}:G${last}`;
+ used.forEach((c,j)=>{const r=4+j,n=L.filter(x=>x.kind==c).length,a=Math.round(L.filter(x=>x.kind==c).reduce((s,x)=>s+(+x.amt||0),0)*100)/100;
+  s2+=`<row r="${r}" ht="20" customHeight="1">${s2c(r,0,c,st({b:1,bg:CKC[c]}))}${s2c(r,1,n,st({}),`COUNTIF(${rg},A${r})`)}${s2c(r,2,a,st({n:4,c:RED}),`SUMIF(${rg},A${r},${vg})`)}${s2c(r,3,tt?a/tt:0,st({n:9}),`IF('العهدة'!G${tot}=0,0,C${r}/'العهدة'!G${tot})`)}</row>`});
+ const e=4+used.length;s2+=`<row r="${e}" ht="22" customHeight="1">${s2c(e,0,'الإجمالي',st({b:1,c:NAVY,bg:GOLD}))}${s2c(e,1,N,st({b:1,c:NAVY,bg:GOLD}),`SUM(B4:B${e-1})`)}${s2c(e,2,tt,st({b:1,c:RED,bg:GOLD,n:4}),`SUM(C4:C${e-1})`)}${s2c(e,3,N?1:0,st({b:1,c:NAVY,bg:GOLD,n:9}),`SUM(D4:D${e-1})`)}</row>`;
+ const sheet2=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView rightToLeft="1" workbookViewId="0"/></sheetViews><cols>${[16,14,16,10].map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${s2}</sheetData><mergeCells count="1"><mergeCell ref="A1:D1"/></mergeCells></worksheet>`;
+ const dx=(c,bg)=>`<dxf><font><b/><color rgb="FF${c}"/></font><fill><patternFill patternType="solid"><fgColor rgb="FF${bg}"/><bgColor rgb="FF${bg}"/></patternFill></fill></dxf>`;
+ const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="dd\\-mm\\-yyyy"/></numFmts><fonts count="${F.length}">${F.join('')}</fonts><fills count="${P.length}">${P.join('')}</fills><borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border>${['left','right','top','bottom'].map(s=>`<${s} style="thin"><color rgb="FFD5DCE6"/></${s}>`).join('')}<diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${X.length}">${X.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="3">${dx('B42318','FAD4D4')}${dx('1D4ED8','D6E6FB')}${dx('C00000','FDE2E2')}</dxfs></styleSheet>`;
+ const NS='http://schemas.openxmlformats.org';
+ return zipBlob([{n:'[Content_Types].xml',d:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="${NS}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>`},
+  {n:'_rels/.rels',d:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`},
+  {n:'xl/workbook.xml',d:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="${NS}/spreadsheetml/2006/main" xmlns:r="${NS}/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets><sheet name="العهدة" sheetId="1" r:id="rId1"/><sheet name="الملخص" sheetId="2" r:id="rId2"/></sheets><definedNames><definedName name="_xlnm.Print_Titles" localSheetId="0">'العهدة'!$7:$7</definedName></definedNames><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`},
+  {n:'xl/_rels/workbook.xml.rels',d:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${NS}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="${NS}/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`},
+  {n:'xl/styles.xml',d:styles},{n:'xl/worksheets/sheet1.xml',d:sheet1},{n:'xl/worksheets/sheet2.xml',d:sheet2}],'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}
+// ---- PDF element (same table, A4)
+function custPdfEl(k){const C=CU(),M=C.m[k],L=M.items,tt=cTot(M),rm=cRem(M);let bal=+M.open||0;const el=document.createElement('div');
+ el.innerHTML=`<div class="cpt"><b>كشف مصروفات العهدة — ${esc(C.cfg.region)} — شهر ${cMoLab(k)}</b><small>المشرف: ${esc(C.cfg.sup)} · 966 Motors — صيدليات الدواء · تاريخ الكشف: ${TD().split('-').reverse().join('-')}</small></div>
+ <div class="ckpi"><div><small>رصيد بداية الشهر</small><b class="c-open">${f2(M.open)}</b></div><div><small>إجمالي المصروف</small><b class="c-exp">${f2(tt)}</b></div><div><small>المتبقي في العهدة</small><b class="c-rem">${f2(rm)}</b></div><div><small>عدد الفواتير</small><b>${L.length}</b></div></div>
+ <table class="cpdf"><tr><th>م</th><th>التاريخ</th><th>الوقت</th><th>البيان</th><th>النوع</th><th>اسم الشركة</th><th>المصروف</th><th>الرصيد بعد المصروف</th><th>السيارة</th><th>رقم الصيدلية</th><th>رقم الفاتورة / ملاحظات</th></tr>
+ <tr class="copen"><td colspan="7">رصيد بداية الشهر</td><td class="c-open">${f2(M.open)}</td><td colspan="3"></td></tr>
+ ${L.map((x,i)=>{bal-= +x.amt||0;const o=cOut(x,k),np=(x.note||'').includes('فاتورة ورقية'),nt=np?'⚠ '+x.note.replace(/^⚠\s*/,''):x.note||'';return `<tr class="${o?'co-'+o:''}"><td class="cmk">${i+1}</td><td class="cmk cdn">${x.dt.split('-').reverse().join('-')}</td><td>${esc(x.tm||'')}</td><td class="cmk">${esc(x.desc)}</td><td style="background:#${CKC[x.kind]||'EFEFEF'}"><b>${esc(x.kind)}</b></td><td class="cmk">${esc(x.comp)}</td><td><b>${f2(x.amt)}</b></td><td class="cbal">${f2(bal)}</td><td>${esc(x.car||'')}</td><td>${esc(x.ph||'')}</td><td${np?' class="cnpt"':''}>${esc([nt,x.ref].filter(Boolean).join(' · '))}</td></tr>`}).join('')}
+ <tr class="ctot"><td colspan="6">الإجمالي</td><td class="c-exp">${f2(tt)}</td><td class="c-rem">${f2(rm)}</td><td colspan="3">← المتبقي في رصيد العهدة</td></tr></table>
+ <div class="csig"><span>توقيع المشرف: ..............</span><span>مراجعة المحاسب: ..............</span><span>اعتماد المدير: ..............</span></div>`;return el}
+const cName=(k,e)=>`عهدة ${CU().cfg.region.replace(/[\\/:*?"<>|]/g,'')} - شهر ${k.slice(5,7)}-${k.slice(0,4)} - ${TD()}.${e}`;
+async function cExport(kind,mode){const k=CU().cur;if(!cMo().items.length&&!confirm('الشهر ده مفيهوش فواتير. تكمل؟'))return;
+ if(kind=='x'){let bl;try{bl=custXlsx(k)}catch(e){console.error(e);return alert('تعذّر إنشاء ملف Excel')}const n=cName(k,'xlsx');if(CAPN())return nativeSave(n,bl,bl.type,mode=='share');return mode=='share'?shr(n,bl,bl.type):out(n,bl,bl.type)}
+ const n=cName(k,'pdf').replace(/\.pdf$/,''),el=custPdfEl(k),ttl='كشف مصروفات العهدة — شهر '+cMoLab(k);
+ if(mode=='share')return sharePdf({src:el,name:n,title:ttl});const t=toast('جاري تجهيز ملف PDF…');try{const b=await buildPdf(el,ttl);t.remove();if(CAPN())return nativeSave(n+'.pdf',b,'application/pdf',false);return out(n+'.pdf',b,'application/pdf')}catch(e){t.remove();console.error(e);alert('تعذّر تجهيز ملف PDF')}}
+// ---- import (file prepared by Claude): {kind:'966cust',items:[...]}
+async function cImport(f){let o;try{o=JSON.parse(await f.text())}catch(e){return alert('الملف ده مش ملف فواتير')}const L=Array.isArray(o)?o:o&&o.items;if(!L||!L.length)return alert('مفيش فواتير في الملف');
+ if(o&&/^\d{4}-\d{2}$/.test(o.month||'')){const C=CU();if(!C.m[o.month])C.m[o.month]={open:o.open!=null?+o.open:C.cfg.base,why:'',items:[]};C.cur=o.month}
+ const M=cMo();let n=0,s=0;for(const y of L){const x=cDraft(Object.assign({},y,{src:'import'}));x.amt=Math.round((+x.amt||0)*100)/100;if(!(x.amt>0)||!/^\d{4}-\d{2}-\d{2}$/.test(x.dt||'')){s++;continue}if(cDup(x)){s++;continue}x.at=nowIso();M.items.push(x);CU().mem[cnk(x.comp)]={desc:x.desc,kind:x.kind};n++}
+ cSort(M.items);sv();render();alert(`✓ اتضاف ${n} فاتورة${s?` · اتجاهل ${s} (مكررة أو ناقصة)`:''}`)}
+function custClick(d,b){
+ if(d.cscan){cScan();return 1}if(d.cscanx){if(CSC)CSC.stop();return 1}if(d.cshot){if(CSC)CSC.shot();return 1}
+ if(d.cman){V.cq=[];cOpen(cDraft({}));return 1}
+ if(d.ced){const x=cMo().items.find(y=>y.id==d.ced);if(x){V.cq=[];cOpen(JSON.parse(JSON.stringify(x)))}return 1}
+ if(d.csave){cSave();return 1}
+ if(d.cskip){const nx=(V.cq||[]).shift();if(nx){V.ce=nx;render()}else{V.ce=null;goV({v:'cust',op:{},dr:{},q:V.q})}return 1}
+ if(d.ccancel){if(V.ce&&!cMo().items.some(x=>x.id==V.ce.id)&&!confirm('الفاتورة دي ما اتحفظتش. تلغيها؟'))return 1;V.ce=null;V.cq=[];goV({v:'cust',op:{},dr:{},q:V.q});return 1}
+ if(d.cdel){if(!confirm('تمسح الفاتورة دي؟'))return 1;const M=cMo();M.items=M.items.filter(x=>x.id!=V.ce.id);(V.ce.imgs||[]).forEach(k=>idbDel(k));sv();V.ce=null;goV({v:'cust',op:{},dr:{},q:V.q});toastT('✓ اتمسحت');return 1}
+ if(d.calt){const a=V.ce._alt;if(a){V.ce.dt=a.dt;V.ce.tm=a.tm;delete V.ce._alt;if(V.ce.kind=='وجبات')V.ce.desc=descOf('وجبات',V.ce.tm,V.ce.comp);render()}return 1}
+ if(d.cpic){const i=$('#cimg1');if(i)i.click();return 1}
+ if(d.cimgz){cImgUrl(d.cimgz).then(u=>{if(!u)return;const z=document.createElement('div');z.className='ovl pov';z.innerHTML='<button class="pr" data-ovlx="1">✕ إغلاق</button><img src="'+u+'">';document.body.appendChild(z)});return 1}
+ if(d.cimgx){V.ce.imgs=(V.ce.imgs||[]).filter(k=>k!=d.cimgx);render();return 1}
+ if(d.cxl){cExport('x',d.cxl);return 1}if(d.cpdf){cExport('p',d.cpdf);return 1}
+ if(d.cnew!==undefined){V.cnew=d.cnew!=='0';render();return 1}
+ if(d.cnewgo){const C=CU(),v=d.cnewgo=='v'?parseFloat(($('#cnewv')||{}).value):+d.cnewgo;if(!(v>=0))return alert('اكتب المبلغ'),1;const k=cNext(C.cur);if(C.m[k]&&C.m[k].items.length&&!confirm('شهر '+cMoLab(k)+' فيه فواتير. تغيّر رصيد بدايته بس؟'))return 1;
+  C.m[k]=C.m[k]||{items:[]};C.m[k].open=Math.round(v*100)/100;C.m[k].why=v==cRem(C.m[C.cur])?'المتبقي من شهر '+cMoLab(C.cur):'';C.cur=k;V.cnew=false;sv();render();toastT('✓ بدأ شهر '+cMoLab(k));return 1}
+ return 0}
+function custChange(x){
+ if(x.id=='cimgs'){const L=[...x.files];x.value='';if(L.length)cFromImages(L);return 1}
+ if(x.id=='cimg1'){const L=[...x.files];x.value='';(async()=>{for(const f of L){const k=await cImgPut(V.ce.id,f);if(k)V.ce.imgs=(V.ce.imgs||[]).concat(k)}render()})();return 1}
+ if(x.id=='cjson'){const f=x.files[0];x.value='';if(f)cImport(f);return 1}
+ if(x.id=='cmosel'){CU().cur=x.value;V.cnew=false;svq();render();return 1}
+ if(x.id=='cnp'&&V.ce){const n=(V.ce.note||'').replace(NOPAPER,'').replace(/^\s*[·⚠]\s*|\s*[·]\s*$/g,'').trim();V.ce.note=x.checked?[NOPAPER,n].filter(Boolean).join(' · '):n;return 1}
+ if(x.dataset.cc){const C=CU();C.cfg[x.dataset.cc]=x.type=='number'?(+x.value||0):x.value;svq();return 1}
+ if(x.dataset.cmopen){cMo().open=Math.round((+x.value||0)*100)/100;sv();render();return 1}
+ if(x.dataset.cf&&V.ce){cField(x);if(x.dataset.cf=='kind'){render();return 1}const q=k=>document.querySelector(`[data-cf=${k}]`);['desc','car'].forEach(k=>{const e=q(k);if(e&&e!==x)e.value=V.ce[k]||''});const kd=q('kind');if(kd)kd.value=V.ce.kind;return 1}
+ return 0}
+function cField(x){const d=V.ce,k=x.dataset.cf,old=d.kind;if(k=='note'){const np=(d.note||'').includes(NOPAPER);d.note=[np?NOPAPER:'',x.value.trim()].filter(Boolean).join(' · ');return}d[k]=x.value;
+ if(k=='comp'&&x.value){const m=CU().mem[cnk(x.value)],auto=!d.desc||d.desc==descOf(old,d.tm,'');if(m){d.kind=m.kind;d.desc=descOf(m.kind,d.tm,x.value)}else{d.kind=kindOf(x.value,'');if(auto)d.desc=descOf(d.kind,d.tm,'')}if(d.kind=='وقود'&&!d.car)d.car=CU().cfg.car}
+ if(k=='tm'&&d.kind=='وجبات'){const ml=mealOf(d.tm);if(ml&&/فطار|غداء|عشاء|وجبة/.test(d.desc||''))d.desc=d.desc.replace(/فطار|غداء|عشاء|وجبة/,ml)}
+ if(k=='kind'&&old!=d.kind){d.desc=descOf(d.kind,d.tm,d.comp);if(d.kind=='وقود'&&!d.car)d.car=CU().cfg.car}}
+document.addEventListener('input',e=>{const x=e.target;if(x.dataset&&x.dataset.cf&&V.ce&&V.v=='ced'&&x.dataset.cf!='kind')cField(x)});

@@ -1,0 +1,113 @@
+// ---------- warehouse (المخزن): stock per shelf type / ad type / name / material / size ----------
+const WXT=['ws','al','ab','dc'];// made to measure, not kept in stock
+function WU(){DB.wh=DB.wh||[];DB.wlog=DB.wlog||[];return DB.wh}
+const whKey=x=>[x.sh,x.ty,nk(x.nm),nk(x.sec),nk(x.mat),String(x.size||'').replace(/\s+/g,'')].join('|');
+const whUnit=ty=>ty=='Wall Header'?'متر':'قطعة';
+const wq=v=>Math.round((+v||0)*100)/100;
+const whLow=()=>WU().filter(x=>x.min!=null&&x.min!==''&&+x.qty<=+x.min).length;
+function whLog(typ,x,qty,src,note){WU();DB.wlog.unshift({at:nowIso(),typ,id:x.id,qty:wq(qty),src:src||'',note:note||'',nm:x.nm,ty:x.ty,size:x.size,sh:x.sh});DB.wlog=DB.wlog.slice(0,3000)}
+function whFind(k){return WU().find(x=>whKey(x)==k)}
+function whAdd(o,qty,typ,src,note){const k=whKey(o);let x=whFind(k);if(!x){x=Object.assign({id:Date.now()+Math.floor(Math.random()*1e4),qty:0,min:'',unit:whUnit(o.ty)},o);WU().push(x)}x.qty=wq(+x.qty+qty);x.at=nowIso();whLog(typ,x,qty,src,note);return x}
+// the pieces one row of a pharmacy stands for (composite types split in their parts), with the shelf type of the item
+function whParts(t,r,s){if(WXT.includes(t.id)||t.auto)return [];const sh=rsh(r,s),z=t.z(r,s),sec=scOf(r),nm=r.nm||r.it||r.kd||'',L=[];
+ if(t.id=='eg'){const m=EGR.exec(z);if(m){L.push({ty:'End gandola - Header',nm,sec,size:m[1],mat:m[2],f:PARTS.eg[0][1]});L.push({ty:'End gandola - Side',nm,sec,size:m[3],mat:m[4],f:PARTS.eg[1][1]})}}
+ else if(t.id=='md'){L.push({ty:'Medicated - Header',nm,sec,size:String(SZ('md.h')),mat:SZ('mt.md'),f:1});L.push({ty:'Medicated - Side',nm,sec,size:String(SZ('md.s')[sh]),mat:SZ('mt.md'),f:1})}
+ else if(t.id=='ga')GAP.forEach(([n,f,zz])=>L.push({ty:GAN+' - '+n,nm:'',sec:'',size:zz,mat:GAM,f}));
+ else if(t.id=='wh'){L.push({ty:t.n,nm,sec,size:wood(r)?(r.len||'')+'':szOf(z),mat:mtOf(z),f:wood(r)?1:(+r.len||0)/100})}
+ else L.push({ty:t.n,nm,sec,size:szOf(z),mat:mtOf(z),f:1});
+ return L.map(x=>Object.assign(x,{sh}))}
+// surplus = received - executed, per stock key
+function whSurplus(p){const m={};ckRows(p).forEach(x=>{const r=x.r,d=Math.max(0,(+r.r||0)-(+r.x||0));if(!d)return;whParts(x.t,r,p.sh).forEach(y=>{const k=whKey(y);if(!m[k])m[k]=Object.assign({},y,{q:0});m[k].q=wq(m[k].q+d*y.f)})});return m}
+function whPlan(p){const S=whSurplus(p),D=p.whT||{},L=[];new Set(Object.keys(S).concat(Object.keys(D))).forEach(k=>{const now=S[k]?S[k].q:0,was=+(D[k]||{}).q||0,dl=wq(now-was);if(dl)L.push(Object.assign({},S[k]||D[k],{k,dl,now}))});return L}
+function whOffer(p,auto){const L=whPlan(p);if(!L.length){if(!auto)toastT('مفيش فائض جديد يترحّل للمخزن من الصيدلية دي');return}V.wt={pid:p.id,from:V.v,fp:V.p};goV({v:'wht',p:p.id,op:{},dr:{},q:V.q,wt:V.wt})}
+function whtHtml(){const p=curP();if(!p)return '';const L=whPlan(p),add=L.filter(x=>x.dl>0),sub=L.filter(x=>x.dl<0),n=a=>a.reduce((s,x)=>s+Math.abs(x.dl),0);
+ return `<div class="wcard"><h2>${ic('box')}ترحيل الفائض للمخزن — صيدلية ${esc(p.no)}</h2><p class="sub">الفائض = المستلم − المتنفذ لكل بند، بنوع رفوف البند.</p>
+ ${add.length?`<div class="ph"><small>هيتضاف <b>${add.length} صنف · ${wq(n(add))}</b></small></div>`:''}${sub.length?`<div class="alr"><small>⚠ الصيدلية اتعدلت بعد ترحيل سابق: هيتخصم <b>${sub.length} صنف · ${wq(n(sub))}</b></small></div>`:''}
+ <div class="sc"><table class="ctab"><tr><th>الصنف</th><th>المقاس</th><th>الخامة</th><th>الرفوف</th><th>الكمية</th></tr>${L.map(x=>`<tr><td>${esc(x.ty)}${x.nm?`<small>${esc([x.sec,x.nm].filter(Boolean).join(' · '))}</small>`:''}</td><td>${esc(x.size||'—')}</td><td>${esc(x.mat||'—')}</td><td>${esc(SH[x.sh]||'—')}</td><td><b class="${x.dl<0?'c-exp':'c-rem'}">${x.dl>0?'+':''}${x.dl} ${whUnit(x.ty)}</b></td></tr>`).join('')}</table></div>
+ <div class="tt"><button class="pr big" data-whgo="1">${ic('check')}ترحيل للمخزن</button><button data-whno="1">تجاهل</button></div></div>`}
+function whApply(){const p=curP();if(!p)return;const L=whPlan(p);p.whT=p.whT||{};L.forEach(x=>{whAdd({sh:x.sh,ty:x.ty,nm:x.nm,sec:x.sec,mat:x.mat,size:x.size},x.dl,x.dl>0?'in':'out','ph:'+p.no,x.dl>0?'فائض صيدلية':'تعديل صيدلية بعد الترحيل');p.whT[x.k]={sh:x.sh,ty:x.ty,nm:x.nm,sec:x.sec,mat:x.mat,size:x.size,q:x.now}});
+ Object.keys(p.whT).forEach(k=>{if(!p.whT[k].q)delete p.whT[k]});p.whAt=nowIso();sv();snd('ok');toastT(`✓ اترحّل ${L.length} صنف للمخزن`);goV({v:'ph',p:p.id,op:{},dr:{},q:V.q})}
+// pull from stock when an item is added to a pharmacy
+function whPullOffer(p,t,r){if(!WU().length)return;const P=whParts(t,r,p.sh);if(!P.length||t.id=='ga'&&false)return;
+ const av=P.map(y=>({y,x:whFind(whKey(y))})).filter(o=>o.x&&+o.x.qty>0);if(!av.length)return;
+ const need=qn(r),can=Math.min(need,...P.map(y=>{const x=whFind(whKey(y));return x?Math.floor((+x.qty+1e-9)/y.f):0}));if(!(can>0))return;
+ const fx=whFind(whKey(P[0])),tt=toast(`<span>📦 في المخزن ${wq(fx.qty)} ${fx.unit} من البند ده (${esc(t.n)}${r.nm?' · '+esc(r.nm):''}). تسحب منهم للصيدلية؟</span><button class="pr" data-whpull="${can}">اسحب ${can}</button><button data-tclose="1">لا</button>`);tt.classList.add('rem');tt._wp={pid:p.id,tid:t.id,i:(p.rows[t.id]||[]).indexOf(r)};snd('tick')}
+function whPull(tt,n){const o=tt._wp,p=DB.ph.find(x=>x.id==o.pid);if(!p)return;const t=T.find(x=>x.id==o.tid),r=(p.rows[o.tid]||[])[o.i];if(!t||!r)return;
+ whParts(t,r,p.sh).forEach(y=>{const x=whFind(whKey(y));if(x)whAdd(x,-n*y.f,'out','ph:'+p.no,'سحب لبند في الصيدلية')});r.wf=(+r.wf||0)+n;r.r=Math.min(qn(r),(+r.r||0)+n);sv();tt.remove();render();toastT(`✓ اتسحب ${n} من المخزن واتحسبوا مستلمين`)}
+// maintenance: ask before taking from stock
+function whMntOffer(x){if(!WU().length)return;const p=mPh(x.ph),sh=p?p.sh:null;const c=WU().filter(w=>+w.qty>0&&(w.ty==x.ad||w.ty.startsWith((x.ad||'')+' -'))&&(!x.sz||String(w.size).replace(/\s+/g,'')==String(x.sz).replace(/\s+/g,''))&&(sh==null||w.sh==sh));if(!c.length)return;
+ const w=c.sort((a,b)=>b.qty-a.qty)[0],n=Math.min(+x.q||1,Math.floor(+w.qty));if(!(n>0))return;
+ if(confirm(`📦 في المخزن ${f2(w.qty).replace(/\.00$/,'')} ${w.unit} من ${w.ty}${w.nm?' · '+w.nm:''} مقاس ${w.size}. تخصم ${n} للصيانة دي؟`)){whAdd(w,-n,'out','mnt:'+x.ph,'صيانة '+x.dt);sv();toastT('✓ اتخصم من المخزن')}}
+// ---- screens
+function whHtml(){const W0=WU(),F=V.wf=V.wf||{},q=(F.t||'').trim().toLowerCase();
+ const L=W0.filter(x=>(F.sh===''||F.sh==null||x.sh==F.sh)&&(!F.ty||x.ty==F.ty)&&(!F.sec||x.sec==F.sec)&&(!F.mat||x.mat==F.mat)&&(!F.low||x.min!==''&&x.min!=null&&+x.qty<=+x.min)&&(!q||[x.ty,x.nm,x.sec,x.size,x.mat].join(' ').toLowerCase().includes(q))).sort((a,b)=>a.sh-b.sh||a.ty.localeCompare(b.ty)||String(a.sec).localeCompare(String(b.sec))||String(a.nm).localeCompare(String(b.nm)));
+ const pcs=L.filter(x=>x.unit!='متر').reduce((a,x)=>a+(+x.qty||0),0),mt=L.filter(x=>x.unit=='متر').reduce((a,x)=>a+(+x.qty||0),0),last=(DB.wlog||[])[0],u=a=>[...new Set(W0.map(x=>x[a]).filter(v=>v!==''&&v!=null))].sort();
+ return `<div class="wcard cust"><div class="ckpi"><div><small>عدد الأصناف</small><b>${W0.length}</b></div><div><small>إجمالي القطع</small><b>${wq(W0.filter(x=>x.unit!='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b></div><div><small>إجمالي الأمتار</small><b>${wq(W0.filter(x=>x.unit=='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b></div><div><small>آخر حركة</small><b style="font-size:13px">${last?fd(last.at).slice(0,10):'—'}</b></div></div>
+ ${whLow()?`<div class="alr"><small>⚠ ${whLow()} صنف رصيده وصل للحد الأدنى أو أقل.</small></div>`:''}
+ <div class="cbtn"><button class="pr" data-whadd="1">${ic('add')}إضافة</button><button class="pr" data-whinv="1">${ic('list')}جرد جديد</button><button data-whlog="1">${ic('db')}سجل الحركات</button></div>
+ <div class="cshare"><button data-whxl="share">${ic('sheet')}مشاركة Excel</button><button data-whpdf="share">${ic('share')}مشاركة PDF</button></div></div>
+ <div class="wcard"><input class="sf" id="whq" placeholder="🔍 بحث بالاسم أو المقاس" value="${esc(F.t||'')}">
+ <div class="c2"><label>نوع الرفوف<select data-whf="sh"><option value="">كل الأنواع</option>${SH.map((x,i)=>`<option value="${i}"${F.sh!==''&&F.sh!=null&&+F.sh==i?' selected':''}>${x}</option>`).join('')}</select></label><label>نوع الدعاية<select data-whf="ty"><option value="">الكل</option>${u('ty').map(x=>`<option${F.ty==x?' selected':''}>${esc(x)}</option>`).join('')}</select></label></div>
+ <div class="c2"><label>القسم<select data-whf="sec"><option value="">الكل</option>${u('sec').map(x=>`<option${F.sec==x?' selected':''}>${esc(x)}</option>`).join('')}</select></label><label>الخامة<select data-whf="mat"><option value="">الكل</option>${u('mat').map(x=>`<option${F.mat==x?' selected':''}>${esc(x)}</option>`).join('')}</select></label></div>
+ <label class="chk"><input type="checkbox" id="whlow"${F.low?' checked':''}> رصيد قليل بس</label></div>
+ ${L.length?L.map(x=>{const lo=x.min!==''&&x.min!=null&&+x.qty<=+x.min;return `<div class="whc${lo?' lo':''}"><div class="whi"><b>${esc(x.ty)}</b><small>${esc([x.sec,x.nm].filter(Boolean).join(' · ')||'—')}</small><small>${esc(x.size||'—')} · ${esc(x.mat||'—')} <span class="rshc">${SH[x.sh]||'—'}</span></small><small class="mu">آخر حركة: ${x.at?fd(x.at).slice(0,10):'—'}${x.min!==''&&x.min!=null?' · الحد الأدنى '+x.min:''}</small></div><div class="whq"><b>${wq(x.qty)}</b><small>${x.unit}</small><div><button class="np" data-whst="${x.id}:-1">−</button><button class="np" data-whst="${x.id}:1">+</button><button class="np" data-whed="${x.id}">⋮</button></div></div></div>`}).join(''):'<p class="em">مفيش أصناف. الفائض بيتضاف لوحده لما تنهي صيدلية، أو اضغط «إضافة».</p>'}
+ <div class="whsum">المعروض: <b>${L.length}</b> صنف · <b>${wq(pcs)}</b> قطعة · <b>${wq(mt)}</b> متر</div>`}
+function wheHtml(){const d=V.we;if(!d)return '';const tys=[...new Set(T.filter(t=>!WXT.includes(t.id)&&!t.auto&&!['eg','md','ga'].includes(t.id)).map(t=>t.n).concat(['End gandola - Header','End gandola - Side','Medicated - Header','Medicated - Side',GAN+' - سايد',GAN+' - هيدر','أخرى']))];
+ return `<div class="wcard ced"><div class="fm"><div class="c2"><label>نوع الرفوف<select data-wef="sh">${SH.map((x,i)=>`<option value="${i}"${+d.sh==i?' selected':''}>${x}</option>`).join('')}</select></label><label>نوع الدعاية<select data-wef="ty">${tys.map(x=>`<option${x==d.ty?' selected':''}>${esc(x)}</option>`).join('')}</select></label></div>
+ <div class="c2"><label>القسم<select data-wef="sec"><option value="">—</option>${S7.concat(['Medicated']).map(x=>`<option${x==d.sec?' selected':''}>${esc(x)}</option>`).join('')}</select></label><label>المسمى<input data-wef="nm" value="${esc(d.nm)}"></label></div>
+ <div class="c2"><label>المقاس (سم)<input data-wef="size" value="${esc(d.size)}" placeholder="مثلًا 11.5×57"></label><label>الخامة<input list="whml" data-wef="mat" value="${esc(d.mat)}"></label></div><datalist id="whml">${ALLM().map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+ <div class="c2"><label>الكمية (${whUnit(d.ty)})<input type="number" inputmode="decimal" data-wef="qty" value="${esc(d.qty)}"></label><label>الحد الأدنى (اختياري)<input type="number" inputmode="decimal" data-wef="min" value="${esc(d.min)}"></label></div>
+ <label>ملاحظات<input data-wef="note" value="${esc(d.note||'')}"></label></div>
+ <div class="tt"><button class="pr big" data-whsave="1">${ic('check')}حفظ</button><button data-tab="wh">إلغاء</button>${d._old?`<button data-whdel="1" style="color:var(--rd)">${ic('trash')}مسح الصنف</button>`:''}</div></div>`}
+function whSave(){const d=V.we;const qty=wq(d.qty);if(!(qty>=0))return alert('اكتب الكمية');if(!d.ty)return alert('اختار نوع الدعاية');const o={sh:+d.sh,ty:d.ty,nm:String(d.nm||'').trim(),sec:d.sec||'',mat:String(d.mat||'').trim(),size:String(d.size||'').trim()};
+ if(d._old){const x=WU().find(y=>y.id==d._old);if(!x)return;const k2=whKey(o),other=WU().find(y=>y!==x&&whKey(y)==k2);if(other){if(!confirm('فيه صنف بنفس البيانات. أدمجهم في صنف واحد؟'))return;whAdd(other,qty,'adj','manual','دمج');DB.wh=WU().filter(y=>y!==x)}else{const dq=wq(qty-x.qty);Object.assign(x,o,{unit:whUnit(o.ty),min:d.min===''?'':+d.min,note:d.note||''});if(dq)whAdd(x,dq,'adj','manual','تعديل الصنف');else x.at=nowIso()}}
+ else{const x=whAdd(o,qty,'in','manual','إضافة يدوي');x.min=d.min===''?'':+d.min;x.note=d.note||''}
+ sv();snd('ok');V.we=null;goV({v:'wh',op:{},dr:{},q:V.q,wf:V.wf});toastT('✓ اتحفظ الصنف')}
+function invHtml(){const L=WU().slice().sort((a,b)=>a.sh-b.sh||a.ty.localeCompare(b.ty)||String(a.nm).localeCompare(String(b.nm))),I=V.inv=V.inv||{},done=L.filter(x=>I[x.id]!==undefined&&I[x.id]!=='').length,only=V.invo;
+ return `<div class="wcard"><h2>${ic('list')}جرد المخزن</h2><div class="pgw"><div class="pg"><i style="width:${L.length?Math.round(100*done/L.length):0}%"></i></div><small>${done}/${L.length} صنف اتعدّ</small></div><label class="chk"><input type="checkbox" id="invo"${only?' checked':''}> اللي ما اتعدّش بس</label>
+ <div class="sc"><table class="ctab"><tr><th>الصنف</th><th>الرصيد</th><th>العدّ الفعلي</th><th>الفرق</th></tr>${L.filter(x=>!only||I[x.id]===undefined||I[x.id]==='').map(x=>{const c=I[x.id],df=c===undefined||c===''?null:wq(+c-x.qty);return `<tr><td>${esc(x.ty)}<small>${esc([x.sec,x.nm,x.size,SH[x.sh]].filter(Boolean).join(' · '))}</small></td><td><b>${wq(x.qty)}</b></td><td><input class="invc" type="number" inputmode="decimal" data-invc="${x.id}" value="${c===undefined?'':esc(c)}"></td><td><b class="${df==null?'':df<0?'c-exp':df>0?'c-rem':''}">${df==null?'—':(df>0?'+':'')+df}</b></td></tr>`}).join('')}</table></div>
+ <div class="tt"><button class="pr big" data-invok="1">${ic('check')}اعتماد الجرد</button><button data-invx="1">إلغاء الجرد</button></div></div>`}
+function invApply(){const I=V.inv||{},L=WU().filter(x=>I[x.id]!==undefined&&I[x.id]!=='');if(!L.length)return alert('ما اتعدّش أي صنف');const R=[];
+ L.forEach(x=>{const before=wq(x.qty),c=wq(I[x.id]),df=wq(c-before);R.push({ty:x.ty,nm:x.nm,sec:x.sec,size:x.size,sh:x.sh,unit:x.unit,before,c,df});if(df)whAdd(x,df,'inv','inv','جرد');else x.at=nowIso()});
+ DB.cfg.invAt=nowIso();DB.cfg.invBy=DB.cfg.dsup||'';DB.invs=(DB.invs||[]);DB.invs.unshift({at:DB.cfg.invAt,by:DB.cfg.invBy,rows:R});DB.invs=DB.invs.slice(0,12);V.inv={};sv();snd('ok');goV({v:'wh',op:{},dr:{},q:V.q});toastT(`✓ اتعتمد الجرد (${R.length} صنف)`)}
+function wlogHtml(){const L=(DB.wlog||[]).slice(0,400),TP={in:'إضافة',out:'سحب',adj:'تسوية',inv:'جرد'};return `<div class="wcard"><h2>${ic('db')}سجل الحركات</h2>${DB.invs&&DB.invs.length?`<div class="ph"><small>آخر جرد: ${fd(DB.invs[0].at)}${DB.invs[0].by?' · '+esc(DB.invs[0].by):''}</small><button data-invrep="x">${ic('sheet')}تقرير آخر جرد Excel</button><button data-invrep="p">${ic('share')}PDF</button></div>`:''}
+ ${L.length?`<div class="sc"><table class="ctab"><tr><th>التاريخ</th><th>الحركة</th><th>الصنف</th><th>الكمية</th><th>المصدر</th></tr>${L.map(x=>`<tr><td class="cdt">${fd(x.at)}</td><td>${TP[x.typ]||x.typ}</td><td>${esc(x.ty)}<small>${esc([x.nm,x.size,SH[x.sh]].filter(Boolean).join(' · '))}</small></td><td><b class="${x.qty<0?'c-exp':'c-rem'}">${x.qty>0?'+':''}${x.qty}</b></td><td>${esc(x.src=='manual'?'يدوي':x.src=='inv'?'جرد':x.src.replace(/^ph:/,'صيدلية ').replace(/^mnt:/,'صيانة صيدلية '))}${x.note?`<small>${esc(x.note)}</small>`:''}</td></tr>`).join('')}</table></div>`:'<p class="em">لسه مفيش حركات.</p>'}</div>`}
+// ---- exports
+function whXlsx(){const L=WU().slice().sort((a,b)=>a.sh-b.sh||a.ty.localeCompare(b.ty)||String(a.nm).localeCompare(String(b.nm))),W=xlW(),NAVY='0B1B33',GOLD='F2B705',MUTE='5B6B80';
+ const H=['م','نوع الرفوف','نوع الدعاية','القسم','المسمى','المقاس (سم)','الخامة','الرصيد','الوحدة','الحد الأدنى','آخر حركة'];
+ W.put(1,0,'رصيد المخزن — '+((DB.cust&&DB.cust.cfg&&DB.cust.cfg.region)||'المنطقة الوسطى (الرياض)'),{sz:15,b:1,c:'FFFFFF',bg:NAVY,nb:1});W.merge('A1:K1');W.put(2,0,'تاريخ: '+TD().split('-').reverse().join('-')+' · '+(DB.cfg.dsup||''),{c:MUTE,nb:1});W.merge('A2:K2');
+ H.forEach((h,i)=>W.put(4,i,h,{b:1,c:'FFFFFF',bg:NAVY}));L.forEach((x,j)=>{const lo=x.min!==''&&x.min!=null&&+x.qty<=+x.min;[j+1,SH[x.sh]||'',x.ty,x.sec||'',x.nm||'',x.size||'',x.mat||'',wq(x.qty),x.unit,x.min===''||x.min==null?'':+x.min,x.at?fd(x.at).slice(0,10):''].forEach((v,i)=>W.put(5+j,i,v,{b:i==7,c:i==7&&lo?'8B0000':'000000',bg:lo?'FDE2E2':(j%2?'F5F7FA':null)}))});
+ const e=5+L.length;for(let i=0;i<11;i++)W.put(e,i,i==0?'الإجمالي':i==7?wq(L.filter(x=>x.unit!='متر').reduce((a,x)=>a+(+x.qty||0),0)):i==8?'قطعة':i==9?wq(L.filter(x=>x.unit=='متر').reduce((a,x)=>a+(+x.qty||0),0))+' متر':'',{b:1,c:NAVY,bg:GOLD});W.merge(`A${e}:G${e}`);[1,4].forEach(r=>W.ht(r,r==1?32:28));
+ return xlBook([['المخزن',W.sheet({cols:[5,14,22,12,24,12,14,10,8,12,12],freeze:4,print:1})]],W,{print:'المخزن',rows:'$4:$4'})}
+function whPdfEl(){const L=WU().slice().sort((a,b)=>a.sh-b.sh||a.ty.localeCompare(b.ty)||String(a.nm).localeCompare(String(b.nm))),el=document.createElement('div');el.innerHTML=`<div class="cpt"><b>رصيد المخزن</b><small>${TD().split('-').reverse().join('-')} · ${esc(DB.cfg.dsup||'')}</small></div><table class="cpdf"><tr><th>م</th><th>نوع الرفوف</th><th>نوع الدعاية</th><th>القسم · المسمى</th><th>المقاس</th><th>الخامة</th><th>الرصيد</th><th>الحد الأدنى</th></tr>${L.map((x,i)=>{const lo=x.min!==''&&x.min!=null&&+x.qty<=+x.min;return `<tr><td>${i+1}</td><td>${SH[x.sh]||''}</td><td>${esc(x.ty)}</td><td>${esc([x.sec,x.nm].filter(Boolean).join(' · '))}</td><td>${esc(x.size||'')}</td><td>${esc(x.mat||'')}</td><td class="${lo?'cnpt':''}"><b>${wq(x.qty)} ${x.unit}</b></td><td>${x.min===''||x.min==null?'':x.min}</td></tr>`}).join('')}</table>`;return el}
+function invXlsx(v){const W=xlW(),NAVY='0B1B33',GOLD='F2B705',R=v.rows;W.put(1,0,'تقرير جرد المخزن — '+fd(v.at)+(v.by?' — '+v.by:''),{sz:14,b:1,c:'FFFFFF',bg:NAVY,nb:1});W.merge('A1:H1');
+ ['م','نوع الرفوف','الصنف','المقاس','الرصيد قبل','العدّ','الفرق','الوحدة'].forEach((h,i)=>W.put(3,i,h,{b:1,c:'FFFFFF',bg:NAVY}));R.forEach((x,j)=>[j+1,SH[x.sh]||'',[x.ty,x.sec,x.nm].filter(Boolean).join(' · '),x.size||'',x.before,x.c,x.df,x.unit].forEach((v2,i)=>W.put(4+j,i,v2,{b:i==6,c:i==6?(x.df<0?'8B0000':x.df>0?'1E7B45':'000000'):'000000'})));
+ const e=4+R.length;for(let i=0;i<8;i++)W.put(e,i,i==0?'إجمالي الفروق':i==6?wq(R.reduce((a,x)=>a+x.df,0)):'',{b:1,c:NAVY,bg:GOLD});W.merge(`A${e}:F${e}`);return xlBook([['الجرد',W.sheet({cols:[5,14,40,12,12,10,10,8]})]],W)}
+function invPdfEl(v){const el=document.createElement('div');el.innerHTML=`<div class="cpt"><b>تقرير جرد المخزن</b><small>${fd(v.at)}${v.by?' · '+esc(v.by):''}</small></div><table class="cpdf"><tr><th>م</th><th>نوع الرفوف</th><th>الصنف</th><th>المقاس</th><th>الرصيد قبل</th><th>العدّ</th><th>الفرق</th></tr>${v.rows.map((x,i)=>`<tr><td>${i+1}</td><td>${SH[x.sh]||''}</td><td>${esc([x.ty,x.sec,x.nm].filter(Boolean).join(' · '))}</td><td>${esc(x.size||'')}</td><td>${x.before}</td><td>${x.c}</td><td class="${x.df<0?'cnpt':''}"><b>${x.df>0?'+':''}${x.df}</b></td></tr>`).join('')}<tr class="ctot"><td colspan="6">إجمالي الفروق</td><td>${wq(v.rows.reduce((a,x)=>a+x.df,0))}</td></tr></table>`;return el}
+async function whExp(kind,mode,inv){const nm=(inv?'جرد المخزن - ':'رصيد المخزن - ')+TD();if(kind=='x'){const bl=inv?invXlsx(inv):whXlsx(),n=nm+'.xlsx';if(CAPN())return nativeSave(n,bl,bl.type,mode!='save');return mode=='save'?out(n,bl,bl.type):shr(n,bl,bl.type)}
+ return sharePdf({src:inv?invPdfEl(inv):whPdfEl(),name:nm,title:inv?'تقرير جرد المخزن':'رصيد المخزن'})}
+function whClick(d,b){
+ if(d.whdone){const p=DB.ph.find(x=>x.id==d.whdone);if(!p)return 1;if(p.st!='مكتملة'&&confirm('تحويل حالة الصيدلية إلى «مكتملة»؟')){p.st='مكتملة';sv()}whOffer(p);return 1}
+ if(d.whgo){whApply();return 1}if(d.whno){goV({v:'ph',p:V.p,op:{},dr:{},q:V.q});return 1}
+ if(d.whpull){const tt=b.closest('.toast');if(tt&&tt._wp)whPull(tt,+d.whpull);return 1}
+ if(d.whadd){V.we={sh:0,ty:'Floor Header',sec:'',nm:'',mat:'',size:'',qty:'',min:''};goV(Object.assign(V,{v:'whe'}));return 1}
+ if(d.whed){const x=WU().find(y=>y.id==d.whed);if(x){V.we=Object.assign({},x,{_old:x.id});goV(Object.assign(V,{v:'whe'}))}return 1}
+ if(d.whsave){whSave();return 1}
+ if(d.whdel){if(!confirm('تمسح الصنف ده من المخزن؟'))return 1;const x=WU().find(y=>y.id==V.we._old);if(x){whLog('adj',x,-x.qty,'manual','مسح الصنف');DB.wh=WU().filter(y=>y!==x)}sv();V.we=null;goV({v:'wh',op:{},dr:{},q:V.q,wf:V.wf});return 1}
+ if(d.whst){const[id,dv]=d.whst.split(':'),x=WU().find(y=>y.id==id);if(x){if(+x.qty+(+dv)<0)return 1;whAdd(x,+dv,'adj','manual','');sv();snd('tick');render()}return 1}
+ if(d.whinv){V.inv={};goV(Object.assign(V,{v:'inv'}));return 1}
+ if(d.invok){if(confirm('اعتماد الجرد هيعدّل أرصدة الأصناف اللي اتعدّت. تكمل؟'))invApply();return 1}
+ if(d.invx){if(Object.keys(V.inv||{}).length&&!confirm('إلغاء الجرد؟ مفيش أي رصيد هيتغير.'))return 1;V.inv={};goV({v:'wh',op:{},dr:{},q:V.q});return 1}
+ if(d.whlog){goV(Object.assign(V,{v:'wlog'}));return 1}
+ if(d.whxl){whExp('x',d.whxl);return 1}if(d.whpdf){whExp('p',d.whpdf);return 1}
+ if(d.invrep){const v=(DB.invs||[])[0];if(v)whExp(d.invrep,'share',v);return 1}
+ return 0}
+function whChange(x){
+ if(x.id=='whq'){V.wf=V.wf||{};V.wf.t=x.value;render();const i=$('#whq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}return 1}
+ if(x.dataset.whf){V.wf=V.wf||{};V.wf[x.dataset.whf]=x.value;render();return 1}
+ if(x.id=='whlow'){V.wf=V.wf||{};V.wf.low=x.checked;render();return 1}
+ if(x.id=='invo'){V.invo=x.checked;render();return 1}
+ if(x.dataset.invc){V.inv=V.inv||{};V.inv[x.dataset.invc]=x.value;render();return 1}
+ if(x.dataset.wef&&V.we){V.we[x.dataset.wef]=x.value;if(x.dataset.wef=='ty')render();return 1}
+ return 0}
+document.addEventListener('input',e=>{const x=e.target;if(x.dataset&&x.dataset.wef&&V.we&&V.v=='whe'&&x.tagName=='INPUT')V.we[x.dataset.wef]=x.value});
