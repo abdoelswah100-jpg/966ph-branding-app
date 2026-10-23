@@ -38,7 +38,7 @@ with sync_playwright() as pw:
     res['wa_text'] = pg.evaluate("rpText()")[:300]
     pg.click('button[data-tab="month"]'); chk('07_month')
     open('s6/month.pdf', 'wb').write(b64(pg, "buildPdf(monthRepEl(V.mo),'تقرير متابعة شهر '+V.mo)"))
-    pg.click('button[data-tab="calc"]'); chk('08_calc')
+    pg.evaluate("V={v:'calc',op:{},dr:{},q:V.q};render()");pg.wait_for_timeout(200); chk('08_calc')
     pg.click('button[data-tab="revhub"]'); chk('09_revhub')
     pg.click('button[data-rv="2026-10"]'); chk('10_rev')
     pg.click('button[data-tab="all"]')
