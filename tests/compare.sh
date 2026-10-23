@@ -15,3 +15,6 @@ cp "$N" full28.html
 echo "--- computed styles (10 screens, light + dark)"
 python3 /home/claude/apk/tests/cssdiff.py "$B" "$N" 2>&1 | grep -E "^(same|DIFF)" | grep -c same | sed "s/^/same screens: /"
 python3 /home/claude/apk/tests/cssdiff.py "$B" "$N" 2>&1 | grep "^DIFF" | cut -c1-300
+
+echo "--- totals/report functions"
+python3 /home/claude/apk/tests/unitcmp.py "$B" "$N" 2>&1 | grep -E "^(same|DIFF)"

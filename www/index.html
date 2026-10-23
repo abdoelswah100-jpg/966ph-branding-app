@@ -10618,6 +10618,8 @@ const APPSRC='<!doctype html>\n'+document.documentElement.outerHTML;
 const SH=['Regular Turkish','New Turkish','Old Turkish','Ukraine','Greece'];SH[-1]='—';
 const S7=['Beauty','Baby','Personal','Health','Pharmacy','Mizan','Health Room'],S4=['Beauty','Baby','Personal','Health'];
 const L=s=>s.split(';');
+// pieces of composite ad types, used by every total, report, checklist and shortage list
+const GAP=[['سايد',2,'68×102'],['هيدر',4,'20×65']],GAM='مات فيلم',PARTS={eg:[['Header',1],['Side',2]],md:[['Header',1],['Side',1]],ga:GAP};
 const NM={
 Baby:L("Feeding Essentials;Baby milk;Toddler's Growth;Baby food;Baby Bath Essentials;Premium Baby Bath;Baby wipes;Premium Baby Diaper;Baby Diaper;Anti-Lice;Baby Accessories Detergents;Baby Cereals;Baby Safety;Breastfeeding & Mom's Care;Diaper Rash Cream;Playtime;Premium Water Wipes;Snacks & Biscuits;Toddler's Feeding Essentials"),
 Beauty:L('Beauty accessories;Face Masks;Brightening & Radiance;Cleansers & Moisturizers;Lip Care;Hair Care Routine;Hair colorants;Beauty Devices;Hair Cleansing & Moisturizing;Complete skin care;Professional Hair Care;Lenses;Ammonia Free;Dandruff & Scalp Care;Hair Masks;Hair Oils;Hair Serums;Hair Styling;Hair Treatments;Healthy Hair;Intense Color;Korean Brands;Leave-in;Lip Balm;Natural Color;Nourishing & Moisturizing;Perfumes;Saudi Brands;Styling Tools;Trendy Items'),
@@ -10692,7 +10694,7 @@ const T=[
  z:r=>`${r.sec} · ${r.sz} سم · ${SZ('mt.ec')}${r.nm?' · '+r.nm:''}`},
 {id:'eg',n:'End gandola',nq:1,f:[sel('nm','القسم · المسمى',r=>r&&r.nm&&!EG.includes(r.nm)&&/^(Personal|Beauty) · /.test(r.nm)?EG.concat([r.nm]):EG),sel('sz','الحجم',(r,s)=>s==2?['قياسي']:['صغير','كبير']),num('q','عدد الهيدر')],
  z:(r,s)=>{const b=r.sz=='كبير',q=r.q,c=x=>String(x).replace(/\s+/g,''),h=c(SZ(b?'eg.hl':'eg.hs')[s]),sd=c(SZ(b?'eg.sl':'eg.ss')[s]),hm=SZ('mt.egh')[s],sm=SZ('mt.egs')[s];
-  return `${r.nm} · Header ${h} (${hm}) ×${q} + Side ${sd} (${sm}) ×${2*q}${s==2?` + Side Acrylic Pocket (1L + 1R)`:''}`}},
+  return `${r.nm} · Header ${h} (${hm}) ×${q} + Side ${sd} (${sm}) ×${PARTS.eg[1][1]*q}${s==2?` + Side Acrylic Pocket (1L + 1R)`:''}`}},
 {id:'al',n:'Acrylic letters 8 mm',f:[SECAL,num('h','ارتفاع التخطيط (سم)'),num('lh','ارتفاع الحروف (سم)'),num('w','عرض جملة الحروف (سم)'),sel('sz','الحجم',()=>['كبير','صغير','غير محدد']),sel('ar','الترتيب',()=>['سطر واحد','فوق بعض','غير محدد']),Q,{k:'nt',l:'ملاحظات (اختياري)'}],
  z:r=>r.pc?`${r.sec} · قطع أكريليك 30×30 سم · ${SZ('mt.al')}${r.nt?' · '+r.nt:''}`:`${r.sec} · تخطيط ${r.h||'—'}×${r.w||'—'} سم · ارتفاع الحروف ${r.lh||'—'} سم · ${r.sz||'غير محدد'} · ${r.ar||'غير محدد'} · ${SZ('mt.al')}${r.nt?' · '+r.nt:''}`},
 {id:'dc',n:'Die Cut',f:[sel('sec','القسم',()=>S7.filter(x=>x!='Mizan')),Q],z:r=>`${r.sec} · ${SZ('dc')} سم · ${SZ('mt.st')}`},
@@ -10706,7 +10708,7 @@ const T=[
 {id:'cm',n:'Camera sticker',max:1,zero:1,cap:1,f:[num('q','العدد (0 أو 1)')],z:r=>`A5 · ${r.q}`,nq:1},
 {id:'md',n:'Medicated',nq:1,f:[sel('nm','المسمى',()=>MED),num('q','العدد (نفس العدد للـ Header والـ Side)')],z:(r,s)=>`${r.nm} · Header ${SZ('md.h')} سم (${SZ('mt.md')}) ×${r.q} + Side ${SZ('md.s')[s]} سم (${SZ('mt.md')}) ×${r.q}`},
 {id:'ab',n:'Acrylic boards',f:[sel('it','البند',()=>ABI),Q,sel('stt','الحالة',()=>['تركيب فقط','تصنيع وتركيب'])],z:r=>`${r.it} · ${ABV(r.it).join(' · ')} · ${r.stt}`}];
-T.push({id:'ga',n:'ضفها للسلة',nq:1,f:[num('q','عدد الجندولات')],z:r=>{const q=+r.q||0;return `سايد 68×102 سم (مات فيلم) ×${2*q} + هيدر 20×65 سم (مات فيلم) ×${4*q}`}});
+T.push({id:'ga',n:'ضفها للسلة',nq:1,f:[num('q','عدد الجندولات')],z:r=>{const q=+r.q||0;return GAP.map(([n,f,z])=>`${n} ${z} سم (${GAM}) ×${f*q}`).join(' + ')}});
 const ORD=['ws','al','wh','fh','ec','eg','ga','md'];T.sort((a,b)=>{const x=ORD.indexOf(a.id),y=ORD.indexOf(b.id);return(x<0?99:x)-(y<0?99:y)});
 T.forEach(t=>{if(t.f)t.f.push({k:'nt',l:'ملاحظات (اختياري)'})});
 const TY=p=>{DB.cfg.adTypes=DB.cfg.adTypes||[];DB.cfg.adTypes.forEach((n,i)=>{if(!n)return;const id='custom_'+i,old=T.find(t=>t.id===id);if(old){old.n=n;old.z=r=>DB.cfg.adTypes[i]}else T.push({id,n,f:[Q,{k:'nt',l:'ملاحظات (اختياري)'}],z:r=>DB.cfg.adTypes[i]})});return T.filter(t=>{if(t.id&&t.id.startsWith('custom_')&&!DB.cfg.adTypes[+t.id.slice(7)])return false;return !t.only||t.only.includes(p.sh)})};
@@ -10829,9 +10831,7 @@ const n2=x=>String(Math.round((+x||0)*100)/100);
 function tTot(t,rs){const q=rs.reduce((a,r)=>a+(r.q==null?1:(+r.q||0)),0);
  if(t.id=='ws')return totRows(rs,t).tot.toFixed(2)+' م²';
  if(t.id=='wh')return n2(rs.reduce((a,r)=>a+lmOf(r),0))+' م';
- if(t.id=='eg')return 'Header '+q+' · Side '+2*q;
- if(t.id=='md')return 'Header '+q+' · Side '+q;
- if(t.id=='ga')return 'سايد '+2*q+' · هيدر '+4*q;
+ if(PARTS[t.id])return PARTS[t.id].map(([n,f])=>n+' '+f*q).join(' · ');
  if(t.id=='al'){const pc=rs.filter(r=>r.pc).reduce((a,r)=>a+(+r.q||0),0);return (q-pc)+' قطعة'+(pc?' · قطع 30×30: '+pc:'')}
  return q+' قطعة'}
 const ttot=(t,rs)=>rs.length?`<div class="ttot"><span>إجمالي ${esc(t.n)}</span><b>${tTot(t,rs)}</b></div>`:'';
@@ -10841,7 +10841,7 @@ function sumHtml(p){const s=p.sh;let pl='',tb='',tot=0,abT='';
  for(const t of TY(p)){const rs=p.rows[t.id]||[];
   if(t.id=='md'){if(rs.length)tb+=mdTable(rs,s);continue}if(t.id=='ab'){if(rs.length)abT=abTable(rs);continue}if(t.auto){pl+=`<tr><td>${t.n}</td><td>${t.auto}</td><td>1</td><td>${esc((p.an||{})[t.id]||'')}</td></tr>`;continue}
   if(!rs.length)continue;
-  if(t.id=='ga'){tb+=`<h3>${t.n}</h3><div class="sc"><table><tr><th>البند</th><th>المقاس</th><th>الخامة</th><th>العدد</th><th>ملاحظات</th></tr>`+rs.map(r=>{const q=+r.q||0;return `<tr><td>سايد</td><td>68×102 سم</td><td>مات فيلم</td><td>${2*q}</td><td>${esc(r.nt||'')}</td></tr><tr><td>هيدر</td><td>20×65 سم</td><td>مات فيلم</td><td>${4*q}</td><td></td></tr>`}).join('')+'</table></div>'+ttot(t,rs);continue}
+  if(t.id=='ga'){tb+=`<h3>${t.n}</h3><div class="sc"><table><tr><th>البند</th><th>المقاس</th><th>الخامة</th><th>العدد</th><th>ملاحظات</th></tr>`+rs.map(r=>{const q=+r.q||0;return GAP.map(([n,f,z],i)=>`<tr><td>${n}</td><td>${z} سم</td><td>${GAM}</td><td>${f*q}</td><td>${i?'':esc(r.nt||'')}</td></tr>`).join('')}).join('')+'</table></div>'+ttot(t,rs);continue}
   if(t.id==='eg'){
    tb+=`<h3>${t.n}</h3><div class="sc"><table><tr><th>المسمى</th><th>المقاس</th><th>Header (العدد)</th><th>Side (العدد)</th>${s===2?'<th>Side Acrylic Pocket</th>':''}<th>ملاحظات</th></tr>`+rs.map(r=>{const b=r.sz==='كبير',hh=String(SZ(b?'eg.hl':'eg.hs')[s]).replace(/\s+/g,''),ss=String(SZ(b?'eg.sl':'eg.ss')[s]).replace(/\s+/g,'');return `<tr>${imgOf(r.nm,r.sec)?`<td class="nic"><img class="nimg" src="${imgOf(r.nm,r.sec)}" alt=""><small>${esc(r.nm)}</small></td>`:`<td>${esc(r.nm)}</td>`}<td>${esc(r.sz||'—')} · Header ${esc(hh)} / Side ${esc(ss)} سم</td><td>${+r.q||0}</td><td>${2*(+r.q||0)}</td>${s===2?'<td>1L + 1R</td>':''}<td>${esc(r.nt||'')}</td></tr>`}).join('')+'</table></div>'+qtyBox(rs,t);continue;
   }
@@ -10861,7 +10861,7 @@ function csvP(p){const s=p.sh,o=[['النوع','القسم','التفاصيل','
 function aggr(){const m={},ord=[];
  function k(n,sc,q,a){const key=n+'|'+sc;if(!m[key]){m[key]={n,sc,q:0,a:0};ord.push(key)}m[key].q+=q;m[key].a+=a}
  for(const p of PF())for(const t of TY(p)){if(t.auto){k(t.n,'',1,0);continue}
-  for(const r of p.rows[t.id]||[]){const sc=t.id=='ab'?r.it:scOf(r),q=r.q!=null?+r.q:1;if(t.id=='ga'){k(GAN+' - سايد',sc,2*q,0);k(GAN+' - هيدر',sc,4*q,0);continue}k(t.n,sc,q,t.m?t.m(r):0);if(t.id=='eg')k('End gandola (Side)',sc,2*q,0)}}
+  for(const r of p.rows[t.id]||[]){const sc=t.id=='ab'?r.it:scOf(r),q=r.q!=null?+r.q:1;if(t.id=='ga'){GAP.forEach(([n,f])=>k(GAN+' - '+n,sc,f*q,0));continue}k(t.n,sc,q,t.m?t.m(r):0);if(t.id=='eg')k('End gandola (Side)',sc,PARTS.eg[1][1]*q,0)}}
  return ord.map(x=>m[x])}
 function allHtml(){const L=aggr();if(!L.length)return'<p class="em">لا توجد بيانات.</p>';let m2=0,h=`<div class="ph"><b>عدد الصيدليات: ${PF().length}</b></div><div class="sc"><table><tr><th>النوع</th><th>القسم</th><th>الإجمالي</th></tr>`;
  L.forEach(x=>{m2+=x.a;const c=COL[x.sc];h+=`<tr><td>${esc(x.n)}</td><td${c?` style="${bgc(c)};font-weight:700"`:''}>${esc(x.sc)}</td><td>${x.n==='Wall Sticker'?`${x.a.toFixed(2)} م²`:x.q+(x.a?` (${x.a.toFixed(2)} م²)`: '')}</td></tr>`});
@@ -10938,8 +10938,8 @@ const EGR=/Header (\S+) \((.+?)\) ×\d+ \+ Side (\S+) \((.+?)\) ×\d+/;
 function sizeRows(P){const m={},ord=[];function k(n,sz,mat,q,a,ty,lm){const key=n+'|'+sz+'|'+mat;if(!m[key]){m[key]={n,sz,mat,q:0,a:0,lm:0,ty:ty||n};ord.push(key)}m[key].q+=q;m[key].a+=a||0;m[key].lm+=lm||0}
  for(const p of P)for(const t of TY(p)){
   for(const r of p.rows[t.id]||[]){const q=r.q!=null?+r.q:1,z=t.z(r,p.sh);
-   if(t.id=='ga'){k(GAN+' - سايد','68×102','مات فيلم',2*q,0,t.n);k(GAN+' - هيدر','20×65','مات فيلم',4*q,0,t.n);continue}
-   if(t.id=='eg'){const x=EGR.exec(z);if(x){k('End gandola - Header',x[1],x[2],q);k('End gandola - Side',x[3],x[4],2*q);if(/Acrylic Pocket/.test(z))k('Side Acrylic Pocket','—','أكريليك',2*q)}continue}
+   if(t.id=='ga'){GAP.forEach(([n,f,z])=>k(GAN+' - '+n,z,GAM,f*q,0,t.n));continue}
+   if(t.id=='eg'){const x=EGR.exec(z);if(x){k('End gandola - Header',x[1],x[2],q);k('End gandola - Side',x[3],x[4],PARTS.eg[1][1]*q);if(/Acrylic Pocket/.test(z))k('Side Acrylic Pocket','—','أكريليك',PARTS.eg[1][1]*q)}continue}
    if(t.id=='al'){if(r.pc)k(t.n,'قطع أكريليك 30×30','اكرليك',q,0,t.n,0);else k(t.n,`${r.lh||'—'} ارتفاع الحروف`,'اكرليك',q);continue}
    if(t.id=='cm'){k(t.n,'A5','ستيكر',q);continue}
    if(t.id=='ws'){k('Wall Sticker','جميع الأقسام','ستيكر',q,t.m?t.m(r):0);continue}
@@ -10952,7 +10952,7 @@ const sizeTable=L=>{const g=L.filter(x=>x.kind==='eg'),n=L.filter(x=>x.kind!=='e
 function managementReportRows(P){
  const raw=sizeRows(P).filter(x=>!['End gandola - Header','End gandola - Side','Side Acrylic Pocket'].includes(x.n));
  const eg=[];
- for(const p of P)for(const r of (p.rows&&p.rows.eg)||[]){const q=+r.q||0,key=String(r.nm||'')+'|'+String(r.sz||'');let x=eg.find(y=>y._key===key);if(!x){x={kind:'eg',_key:key,n:'End gandola',sz:r.nm||'—',mat:'',q:0,header:0,side:0,pocket:p.sh===2?'1L + 1R':'',shelf:p.sh};eg.push(x)}x.q+=q;x.header+=q;x.side+=2*q;if(p.sh===2)x.pocket='1L + 1R';}
+ for(const p of P)for(const r of (p.rows&&p.rows.eg)||[]){const q=+r.q||0,key=String(r.nm||'')+'|'+String(r.sz||'');let x=eg.find(y=>y._key===key);if(!x){x={kind:'eg',_key:key,n:'End gandola',sz:r.nm||'—',mat:'',q:0,header:0,side:0,pocket:p.sh===2?'1L + 1R':'',shelf:p.sh};eg.push(x)}x.q+=q;x.header+=PARTS.eg[0][1]*q;x.side+=PARTS.eg[1][1]*q;if(p.sh===2)x.pocket='1L + 1R';}
  return raw.concat(eg);
 }
 function gTot(ty,L){const q=L.reduce((a,x)=>a+(+x.q||0),0);
@@ -11025,7 +11025,7 @@ function docLines(p){const L=[];let wsm=0;sizeRows([p]).forEach(x=>{if(x.n=='Wal
 function ckRows(p){const L=[];TY(p).forEach(t=>(p.rows[t.id]||[]).forEach((r,i)=>{if(r.q===0||r.q==='0')return;L.push({t,i,r,s:p.sh})}));return L}
 const qn=r=>r.q==null?1:(+r.q||0);
 const GAN='ضفها للسلة';
-const pcs=t=>t.id=='ga'?6:t.id=='eg'?3:t.id=='md'?2:1;
+const pcs=t=>PARTS[t.id]?PARTS[t.id].reduce((a,x)=>a+x[1],0):1;
 const TKL={r:{t:'المستلم',all:'استلمت الكل',done:'مستلم',sh:'ملخص نواقص الطباعة'},x:{t:'المتنفذ',all:'اتنفذ الكل',done:'متنفذ',sh:'ملخص نواقص التنفيذ'}};
 function tkProg(p,k){let d=0,n=0;ckRows(p).forEach(x=>{const q=qn(x.r),f=pcs(x.t);n+=q*f;d+=Math.min(q,+x.r[k]||0)*f});return{d,n,pc:n?Math.round(100*d/n):0}}
 function ckProg(p){return tkProg(p,'r')}
@@ -11040,9 +11040,9 @@ function tkSet(p,k,tid,i,v){const r=p.rows[tid]&&p.rows[tid][+i];if(!r)return;co
 function tkRe(){const y=scrollY;render();scrollTo(0,y)}
 // ---- shortages ----
 function nqLines(p,k){const o=[];ckRows(p).forEach(x=>{const r=x.r,t=x.t,q=qn(r),v=Math.min(q,+r[k]||0),d=q-v;if(d<=0)return;const z=t.z(r,p.sh),sc=t.id=='ab'?'':scOf(r),b={p,t,r,sec:sc};
-  if(t.id=='eg'){const m=EGR.exec(z);o.push({...b,nm:r.nm,pt:'Header',sz:m?m[1]:'—',mat:m?m[2]:'—',q,v,d});o.push({...b,nm:r.nm,pt:'Side',sz:m?m[3]:'—',mat:m?m[4]:'—',q:2*q,v:2*v,d:2*d});return}
+  if(t.id=='eg'){const m=EGR.exec(z);o.push({...b,nm:r.nm,pt:'Header',sz:m?m[1]:'—',mat:m?m[2]:'—',q,v,d});const f=PARTS.eg[1][1];o.push({...b,nm:r.nm,pt:'Side',sz:m?m[3]:'—',mat:m?m[4]:'—',q:f*q,v:f*v,d:f*d});return}
   if(t.id=='md'){o.push({...b,nm:r.nm,pt:'Header',sz:SZ('md.h'),mat:SZ('mt.md'),q,v,d});o.push({...b,nm:r.nm,pt:'Side',sz:SZ('md.s')[p.sh],mat:SZ('mt.md'),q,v,d});return}
-  if(t.id=='ga'){o.push({...b,nm:'',pt:'سايد',sz:'68×102',mat:'مات فيلم',q:2*q,v:2*v,d:2*d});o.push({...b,nm:'',pt:'هيدر',sz:'20×65',mat:'مات فيلم',q:4*q,v:4*v,d:4*d});return}
+  if(t.id=='ga'){GAP.forEach(([n,f,z])=>o.push({...b,nm:'',pt:n,sz:z,mat:GAM,q:f*q,v:f*v,d:f*d}));return}
   const nm=r.nm||r.it||r.kd||'',sz=t.id=='ws'?`${r.h}×${r.w}`:t.id=='ab'?ABV(r.it)[0]:t.id=='al'?(r.pc?'30×30':`${r.lh||'—'} حروف · ${r.h||'—'}×${r.w||'—'}`):szOf(z),mat=t.id=='ab'?ABV(r.it)[1]:t.id=='al'?SZ('mt.al'):mtOf(z);
   o.push({...b,nm,pt:'',sz,mat,q,v,d})});return o}
 function nqHtml(){const k=V.nk||'x',mo=V.ns=='mo',P=mo?DB.ph.filter(p=>p.mo==V.mo).sort(pSort):[curP()].filter(Boolean),ttl=k=='x'?'نواقص التنفيذ':'نواقص الطباعة',lab=k=='x'?'المتنفذ':'المستلم';
@@ -11092,7 +11092,7 @@ function dawaaMsg(n,ok){setTimeout(()=>{document.querySelectorAll('.toast.dw').f
 const locChips=(p,sm)=>`<div class="locs np">${p.loc?`<a class="locb go" href="${esc(p.loc)}" target="_blank" rel="noopener">${ic('pin')}${sm?'الموقع':'فتح الموقع'}</a>`:`<button class="locb" data-addloc="${p.id}">${ic('pin')}أضف الموقع</button>`}${sm?'':`<a class="locb" href="${esc(DAWAA(p.no))}" target="_blank" rel="noopener" data-dcopy="${esc(p.no||'')}">${ic('globe')}موقعها على موقع الدواء</a>`}</div>`;
 const locField=(id,v)=>`<label>رابط الموقع (جوجل ماب)<input id="${id}" value="${esc(v||'')}" placeholder="الصق لينك جوجل ماب أو الإحداثيات" inputmode="url" dir="ltr"></label><div class="locs"><button type="button" class="locb" data-geo="${id}">${ic('pin')}موقعي الحالي</button>${id=='ploc'?`<button type="button" class="locb" data-dfind="1">${ic('globe')}دوّر عليها في موقع الدواء</button>`:''}</div>`;
 function addHtml(){return `<div class="rhd">${ic('add')}<b>إضافة صيدلية جديدة</b></div><div class="fm"><label>رقم الصيدلية<input id="pno" inputmode="numeric"></label><label>المنطقة<select id="prg">${RG.map(x=>`<option>${x}</option>`).join('')}</select></label><label>المدينة (اختياري)<input id="pct"></label><label>اسم الحي (اختياري)<input id="pn"></label>${locField('ploc','')}<label>نوع التعديل<select id="pmod">${DB.cfg.modTypes.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label><label>نوع الرفوف<select id="ps">${SH.map((x,i)=>`<option value="${i}">${x}</option>`).join('')}</select></label><label>الشهر والسنة<input type="month" id="pmo" value="${MN()}"></label><label>اسم المشرف<input id="psup" value="${esc(DB.cfg.dsup||'عبدالله السواح')}"></label><label>الشركة المنفذة<input id="pco" list="colist" value="${esc(DB.cfg.dco||'عمال الشركة')}"></label><datalist id="colist"><option value="عمال الشركة"><option value="شركة دعاية خارجية"></datalist><div class="dts"><label>تاريخ البدء<input type="date" id="pds"></label><label>تاريخ الانتهاء<input type="date" id="pde"></label></div>${DB.tp.length?`<label>قالب البنود (بيتختار تلقائي حسب نوع الرفوف ونوع التعديل)<select id="ptpl">${tplAddOpts(0,DB.cfg.modTypes[0]||'')}</select></label>`:''}<button class="pr" id="addp">${ic('add')}حفظ وفتح الصيدلية</button></div>`}
-function mStats(L){let a=0,q=0;L.forEach(p=>TY(p).forEach(t=>(p.rows[t.id]||[]).forEach(r=>{q+=(+r.q||0)*(t.id=='ga'?6:1);if(t.m)a+=t.m(r)})));const c=L.filter(p=>p.st=='مكتملة').length;return{n:L.length,c,j:L.filter(p=>p.st=='جاري').length,z:L.filter(p=>p.st=='لم تبدأ').length,pc:L.length?Math.round(100*c/L.length):0,a,q,ok:L.filter(p=>revSt(p)=='ok').length,old:L.filter(p=>revSt(p)=='old').length,al:L.filter(p=>alerts(p).length).sort(pSort)}}
+function mStats(L){let a=0,q=0;L.forEach(p=>TY(p).forEach(t=>(p.rows[t.id]||[]).forEach(r=>{q+=(+r.q||0)*(t.id=='ga'?pcs(t):1);if(t.m)a+=t.m(r)})));const c=L.filter(p=>p.st=='مكتملة').length;return{n:L.length,c,j:L.filter(p=>p.st=='جاري').length,z:L.filter(p=>p.st=='لم تبدأ').length,pc:L.length?Math.round(100*c/L.length):0,a,q,ok:L.filter(p=>revSt(p)=='ok').length,old:L.filter(p=>revSt(p)=='old').length,al:L.filter(p=>alerts(p).length).sort(pSort)}}
 function calcRows(){DB.cfg.calc=DB.cfg.calc||[];if(!DB.cfg.calc.length)DB.cfg.calc.push({sec:'Beauty',kd:'تخطيط',h:'',w:'',q:1});return DB.cfg.calc}
 const cm2=r=>(+r.h||0)*(+r.w||0)*(+r.q||0)/10000;
 function calcTot(){const R=calcRows(),g={};let t=0;R.forEach(r=>{const v=cm2(r);if(v){g[r.sec]=(g[r.sec]||0)+v;t+=v}});return `<div class="tt">${Object.keys(g).map(k=>`<span style="${bgc(COL[k]||'#999')}">${esc(k)}: ${g[k].toFixed(2)} م²</span>`).join('')}<b>صافي الإجمالي: ${t.toFixed(2)} م²</b></div>`}
