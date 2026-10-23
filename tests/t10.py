@@ -1,0 +1,57 @@
+import json, os, base64, re
+from playwright.sync_api import sync_playwright
+W = '/home/claude/work/'; S9 = W + 's9/'
+d = json.load(open(W + 'out3/966-data-v1.3.json', encoding='utf-8'))
+d['ph'].append({'id': 99652, 'no': '652', 'rg': 'الشمالية', 'ct': 'تبوك', 'name': '', 'sh': 0, 'mo': '2026-10', 'st': 'لم تبدأ', 'sup': 'عبدالله السواح', 'co': 'عمال الشركة', 'mod': 'براندنج جديد', 'rows': {'ab': []}, 'm1': 1, 'm2': 1})
+DATA = json.dumps(d, ensure_ascii=False)
+errs, res = [], {}
+AR = re.compile(r'[ء-ي][ء-ي ]*')
+def b64(pg, expr):
+    return base64.b64decode(pg.evaluate("async()=>{const b=await (" + expr + ");const a=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s)}"))
+with sync_playwright() as pw:
+    br = pw.chromium.launch(executable_path='/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
+    ctx = br.new_context(viewport={'width': 400, 'height': 860}, device_scale_factor=2, accept_downloads=True)
+    pg = ctx.new_page()
+    pg.on('pageerror', lambda e: errs.append('PAGEERR ' + str(e)))
+    pg.on('console', lambda m: errs.append('CONSOLE ' + m.text) if m.type == 'error' else None)
+    dl = []; pg.on('dialog', lambda x: (dl.append(x.message[:70]), x.accept()))
+    pg.goto('file://' + W + 'full28.html'); pg.wait_for_timeout(300)
+    pg.evaluate("d=>{localStorage.setItem('ads',d)}", DATA); pg.reload(); pg.wait_for_timeout(1800)
+    sh = lambda n, f=False: pg.screenshot(path=W + f's9/x_{n}.png', full_page=f)
+    res['bimg'] = pg.evaluate("Object.keys(BIMG).length")
+    res['missing'] = pg.evaluate("libNames().filter(x=>!imgOf(x.n)).map(x=>x.n)")
+    res['eg_new'] = pg.evaluate("EG.filter(x=>/Mouthwash|Herbal|Men\\'s/.test(x))")
+    pid = pg.evaluate("DB.ph.find(p=>p.no=='1533').id")
+    pg.evaluate(f"V={{v:'sum',sm:'print',p:{pid},op:{{}},dr:{{}},q:V.q}};render()"); pg.wait_for_timeout(300)
+    res['sum_imgs'] = pg.locator('#rp td.nic img').count()
+    y = pg.evaluate("(()=>{const h=[...document.querySelectorAll('#rp h3')].find(h=>/Wall Header/.test(h.textContent));return h.getBoundingClientRect().top+scrollY-120})()")
+    pg.evaluate(f"scrollTo(0,{y})"); pg.wait_for_timeout(200); sh('sum')
+    open(W + 's9/x_sum.pdf', 'wb').write(b64(pg, 'buildPdf()'))
+    # replace an image, then revert
+    pg.click('button.hmb'); pg.click('button[data-mgo="imgs"]'); pg.wait_for_timeout(300); sh('lib')
+    pg.evaluate("V.im1='Baby milk'"); pg.set_input_files('#img1', S9 + 'PH-652 plan.jpg'); pg.wait_for_timeout(1000)
+    res['custom'] = pg.evaluate("[!!IMG[nk('Baby milk')], imgOf('Baby milk')==IMG[nk('Baby milk')]]")
+    res['custom_size'] = pg.evaluate("new Promise(r=>{const i=new Image();i.onload=()=>r([i.width,i.height]);i.src=IMG[nk('Baby milk')]})")
+    pg.reload(); pg.wait_for_timeout(1800)
+    res['custom_after_reload'] = pg.evaluate("!!IMG[nk('Baby milk')]")
+    pg.click('button.hmb'); pg.click('button[data-mgo="imgs"]'); pg.wait_for_timeout(300)
+    pg.click('button[data-imdel="Baby milk"]'); pg.wait_for_timeout(300)
+    res['reverted'] = pg.evaluate("[!!IMG[nk('Baby milk')], imgOf('Baby milk')==BIMG[nk('Baby milk')]]")
+    # excel import new pharmacy without images
+    pg.evaluate("V={v:'ph',p:99652,op:{__att:true},dr:{},q:V.q};render()"); pg.wait_for_timeout(150)
+    res['xls_accept'] = pg.get_attribute('#attxls', 'accept')
+    pg.set_input_files('#attxls', S9 + 'New Headers-P0652.xlsx'); pg.wait_for_timeout(2500)
+    res['xr_view'] = pg.evaluate('V.v'); res['xr_imgs'] = pg.locator('.xri img').count(); res['xr_items'] = pg.evaluate("V.xr.items.length")
+    sh('xr', False)
+    pg.click('button[data-xgo]'); pg.wait_for_timeout(300)
+    res['rows'] = pg.evaluate("(()=>{const p=DB.ph.find(x=>x.id==99652);return ['wh','fh','eg','md'].map(t=>(p.rows[t]||[]).length)})()")
+    res['img_lib_unchanged'] = pg.evaluate("Object.keys(IMG).length")
+    pg.evaluate("V={v:'sum',sm:'print',p:99652,op:{},dr:{},q:V.q};render()"); pg.wait_for_timeout(300)
+    res['sum652_imgs'] = pg.locator('#rp td.nic img').count()
+    y = pg.evaluate("(()=>{const h=[...document.querySelectorAll('#rp h3')].find(h=>/End gandola/.test(h.textContent));return h?h.getBoundingClientRect().top+scrollY-120:0})()")
+    pg.evaluate(f"scrollTo(0,{y})"); pg.wait_for_timeout(200); sh('sum652')
+    pg.evaluate("DB.cfg.lang='en';V={v:'imgs',op:{},dr:{},q:V.q};render()"); pg.wait_for_timeout(300)
+    t = pg.evaluate("document.body.innerText"); res['en_left'] = sorted(set(x.strip() for x in AR.findall(t)))[:15]
+    res['dialogs'] = dl
+    br.close()
+print(json.dumps(res, ensure_ascii=False, indent=1)); print('\n'.join(errs) or 'NO ERRORS')

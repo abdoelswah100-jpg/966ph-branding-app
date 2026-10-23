@@ -2,3 +2,6 @@ node_modules/
 android/
 www/fonts/
 *.apk
+dist/
+tests/fixtures/
+tests/s*/
