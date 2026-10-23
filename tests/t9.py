@@ -29,6 +29,11 @@ with sync_playwright() as pw:
     res['imr_chk'] = pg.evaluate("V.imr.items.map((x,i)=>[i,x.raw,x.nm,x.chk]).filter(x=>x[3])")
     sh('02_imr', True)
     pg.click('button[data-imrgo]'); pg.wait_for_timeout(600)
+    _c = -1
+    for _ in range(40):  # wait until the image import has finished (count stable)
+        n = pg.evaluate("Object.keys(IMG).length")
+        if n == _c: break
+        _c = n; pg.wait_for_timeout(700)
     res['img_count'] = pg.evaluate("Object.keys(IMG).length"); sh('03_imgs_after')
     # 1b import gandola images from pharmacy file
     pg.set_input_files('#imgx', S9 + 'New Headers-P0652.xlsx'); pg.wait_for_timeout(3500)
