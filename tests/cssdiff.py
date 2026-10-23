@@ -13,6 +13,7 @@ def run(f,dark):
     with sync_playwright() as pw:
         br=pw.chromium.launch(executable_path='/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
         pg=br.new_page(viewport={'width':400,'height':860},color_scheme='dark' if dark else 'light')
+        pg.add_init_script("(()=>{const T=new Date('2026-10-22T09:00:00').getTime(),D=Date;class F extends D{constructor(...a){super(...(a.length?a:[T]))}static now(){return T}};window.Date=F})()")  # fixed clock: times on screen do not change widths
         pg.goto('file://'+W+f);pg.wait_for_timeout(300)
         pg.evaluate("d=>localStorage.setItem('ads',d)",DATA);pg.reload();pg.wait_for_timeout(1800)
         # mark some receipt/execution counts so row colours show
