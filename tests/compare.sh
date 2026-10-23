@@ -11,3 +11,7 @@ for t in t6 t7 t9 t10 t11 t12 t13 t14 test3; do
   if diff -q cmp/$t.base.txt cmp/$t.new.txt >/dev/null; then echo "$t SAME"; else echo "$t DIFF"; diff cmp/$t.base.txt cmp/$t.new.txt | head -20; fi
 done
 cp "$N" full28.html
+
+echo "--- computed styles (10 screens, light + dark)"
+python3 /home/claude/apk/tests/cssdiff.py "$B" "$N" 2>&1 | grep -E "^(same|DIFF)" | grep -c same | sed "s/^/same screens: /"
+python3 /home/claude/apk/tests/cssdiff.py "$B" "$N" 2>&1 | grep "^DIFF" | cut -c1-300

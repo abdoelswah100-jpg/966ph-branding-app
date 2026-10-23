@@ -12,11 +12,11 @@ def run(f,dark):
     out={}
     with sync_playwright() as pw:
         br=pw.chromium.launch(executable_path='/opt/pw-browsers/chromium-1194/chrome-linux/chrome')
-        pg=br.new_page(viewport={'width':400,'height':860})
+        pg=br.new_page(viewport={'width':400,'height':860},color_scheme='dark' if dark else 'light')
         pg.goto('file://'+W+f);pg.wait_for_timeout(300)
         pg.evaluate("d=>localStorage.setItem('ads',d)",DATA);pg.reload();pg.wait_for_timeout(1800)
         # mark some receipt/execution counts so row colours show
-        pg.evaluate("(()=>{const p=DB.ph[0];Object.values(p.rows).forEach(a=>Array.isArray(a)&&a.forEach((r,i)=>{r.r=i%3==0?qn(r):i%3==1?Math.min(1,qn(r)-1):0;r.x=i%2?qn(r):0}));if("+('true' if dark else 'false')+")document.documentElement.dataset.th='dark';})()")
+        pg.evaluate("(()=>{const p=DB.ph[0];Object.values(p.rows).forEach(a=>Array.isArray(a)&&a.forEach((r,i)=>{r.r=i%3==0?qn(r):i%3==1?Math.min(1,qn(r)-1):0;r.x=i%2?qn(r):0}));"+("DB.cfg.th='dark';" if dark else "")+"})()")
         for v in VIEWS:
             pg.evaluate(v+";render()");pg.wait_for_timeout(250)
             out[v[:40]]=pg.evaluate(JS)

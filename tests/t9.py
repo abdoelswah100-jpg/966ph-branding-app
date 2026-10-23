@@ -38,7 +38,13 @@ with sync_playwright() as pw:
     # 1b import gandola images from pharmacy file
     pg.set_input_files('#imgx', S9 + 'New Headers-P0652.xlsx'); pg.wait_for_timeout(3500)
     res['imr652'] = pg.evaluate("[V.imr.items.length,V.imr.items.filter(x=>x.nm).length,V.imr.items.filter(x=>/·/.test(x.nm)).map(x=>x.nm)]")
-    pg.click('button[data-imrgo]'); pg.wait_for_timeout(600); res['img_count2'] = pg.evaluate("Object.keys(IMG).length")
+    pg.click('button[data-imrgo]'); pg.wait_for_timeout(600)
+    _c = -1
+    for _ in range(40):  # wait until the second import has finished too
+        n = pg.evaluate("Object.keys(IMG).length+'|'+V.v")
+        if n == _c: break
+        _c = n; pg.wait_for_timeout(700)
+    res['img_count2'] = pg.evaluate("Object.keys(IMG).length")
     # 2. summary with images
     pid = pg.evaluate("DB.ph.find(p=>p.no=='1533').id")
     pg.evaluate(f"V={{v:'sum',sm:'print',p:{pid},op:{{}},dr:{{}},q:V.q}};render()"); pg.wait_for_timeout(300)
@@ -95,9 +101,9 @@ with sync_playwright() as pw:
     res['bkf'] = [len(j.get('_imgs', {})), len(j.get('_files', {})), os.path.getsize(W + 's9/bkf.json') // 1024]
     # english
     pg.evaluate("DB.cfg.lang='en';V={v:'imgs',op:{},dr:{},q:V.q};render()"); pg.wait_for_timeout(200)
-    t = pg.evaluate("document.body.innerText"); res['en_imgs_left'] = sorted(set(x.strip() for x in AR.findall(t)))[:20]
+    t = pg.evaluate("(()=>{const c=document.body.cloneNode(true);c.querySelectorAll('.toast').forEach(x=>x.remove());document.body.appendChild(c);c.style.cssText='position:absolute;left:0;top:0';const t=c.innerText;c.remove();return t})()"); res['en_imgs_left'] = sorted(set(x.strip() for x in AR.findall(t)))[:20]
     pg.evaluate("V={v:'ph',p:99652,op:{__att:true},dr:{},q:V.q};render()"); pg.wait_for_timeout(200)
-    t = pg.evaluate("document.body.innerText"); res['en_ph_left'] = sorted(set(x.strip() for x in AR.findall(t)))[:20]
+    t = pg.evaluate("(()=>{const c=document.body.cloneNode(true);c.querySelectorAll('.toast').forEach(x=>x.remove());document.body.appendChild(c);c.style.cssText='position:absolute;left:0;top:0';const t=c.innerText;c.remove();return t})()"); res['en_ph_left'] = sorted(set(x.strip() for x in AR.findall(t)))[:20]
     pg.evaluate("DB.cfg.lang='';render()")
     ctx2 = br.new_context(viewport={'width': 400, 'height': 860}, accept_downloads=True)
     p2 = ctx2.new_page(); p2.on('pageerror', lambda e: errs.append('P2 ' + str(e))); p2.on('dialog', lambda x: x.accept())
