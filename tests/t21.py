@@ -9,10 +9,10 @@ with sync_playwright() as pw:
   pid=pg.evaluate("DB.ph.find(p=>p.no=='843').id")
   # edit first gondola: pq field
   pg.evaluate(f"goV({{v:'ph',p:{pid},op:{{eg:true}},dr:{{}},q:V.q}})");pg.click("details[data-id=eg] [data-ed='eg:0']");pg.wait_for_timeout(200)
-  out('pq_field_full',pg.evaluate("!!document.querySelector('details[data-id=eg] input[data-k=pq]')"))
-  pg.select_option("details[data-id=eg] select[data-k=egp]",'باك لايت + ستيكر بس');pg.wait_for_timeout(200);out('pq_hidden_bs',pg.evaluate("!document.querySelector('details[data-id=eg] input[data-k=pq]')"))
-  pg.select_option("details[data-id=eg] select[data-k=egp]",'كامل');pg.wait_for_timeout(200);pg.fill("details[data-id=eg] input[data-k=pq]",'1');pg.dispatch_event("details[data-id=eg] input[data-k=pq]",'input');pg.click("details[data-id=eg] [data-add=eg]");pg.wait_for_timeout(200)
-  out('row0',pg.evaluate(f"(r=>[r.q,r.pq,r.egp])(DB.ph.find(p=>p.id=={pid}).rows.eg[0])"))
+  out('side_fields_full',pg.evaluate("[!!document.querySelector('details[data-id=eg] input[data-k=pR]'),!!document.querySelector('details[data-id=eg] input[data-k=pL]')]"))
+  pg.select_option("details[data-id=eg] select[data-k=egp]",'باك لايت + ستيكر بس');pg.wait_for_timeout(200);out('side_hidden_bs',pg.evaluate("!document.querySelector('details[data-id=eg] input[data-k=pR]')"))
+  pg.select_option("details[data-id=eg] select[data-k=egp]",'كامل');pg.wait_for_timeout(200);pg.fill("details[data-id=eg] input[data-k=pR]",'1');pg.dispatch_event("details[data-id=eg] input[data-k=pR]",'input');pg.fill("details[data-id=eg] input[data-k=pL]",'0');pg.dispatch_event("details[data-id=eg] input[data-k=pL]",'input');pg.click("details[data-id=eg] [data-add=eg]");pg.wait_for_timeout(200)
+  out('row0',pg.evaluate(f"(r=>[r.q,r.pR,r.pL,r.egp])(DB.ph.find(p=>p.id=={pid}).rows.eg[0])"))
   out('z_row0',pg.evaluate(f"(p=>T.find(t=>t.id=='eg').z(p.rows.eg[0],p.sh))(DB.ph.find(p=>p.id=={pid}))"))
   # row 4 -> acrylic only
   pg.evaluate(f"(p=>{{p.rows.eg[4].egp='أكريليك بس';sv()}})(DB.ph.find(p=>p.id=={pid}))")
@@ -20,19 +20,19 @@ with sync_playwright() as pw:
   out('pocket_table',pg.evaluate("(h=>h?[...h.nextElementSibling.querySelectorAll('tr')].slice(1).map(r=>r.cells.length>3?r.cells[3].innerText:r.innerText.replace(/\\s+/g,' ')):null)([...document.querySelectorAll('#rp h3')].find(h=>h.textContent=='Side Acrylic Pocket'))"))
   # receipt checklist
   pg.evaluate(f"goV({{v:'sum',sm:'ck',p:{pid},op:{{}},dr:{{}},q:V.q}})");pg.wait_for_timeout(300)
-  out('pocket_subrows',pg.evaluate("document.querySelectorAll('#rp tr.tkp').length"))
+  out('migr_pq_to_sides',pg.evaluate("(()=>{const p={sh:2,rows:{eg:[{nm:EG[0],sz:'قياسي',q:2,pq:3,rp:1,r:2}]}};migPK(p);const r=p.rows.eg[0];return [r.pR,r.pL,r.rpR,r.rpL,'pq' in r,'rp' in r]})()"));out('pocket_subrows',pg.evaluate("document.querySelectorAll('#rp tr.tkp').length"))
   pg.click("[data-tf='r:eg:0']");pg.wait_for_timeout(200)
-  out('row0_after_main_check',pg.evaluate(f"(r=>[r.r,r.rp||0])(DB.ph.find(p=>p.id=={pid}).rows.eg[0])"))
+  out('row0_after_main_check',pg.evaluate(f"(r=>[r.r,r.rpR||0,r.rpL||0])(DB.ph.find(p=>p.id=={pid}).rows.eg[0])"))
   out('nq_r_eg',pg.evaluate(f"nqLines(DB.ph.find(p=>p.id=={pid}),'r').filter(x=>x.t.id=='eg').map(x=>[x.nm.slice(0,12),x.pt,x.sz,x.q,x.v,x.d])"))
-  pg.click("[data-tf='rp:eg:0']");pg.wait_for_timeout(200);out('row0_pocket_check',pg.evaluate(f"DB.ph.find(p=>p.id=={pid}).rows.eg[0].rp"))
+  pg.click("[data-tf='rpR:eg:0']");pg.wait_for_timeout(200);out('row0_pocket_check',pg.evaluate(f"(r=>[r.rpR,r.rpL||0])(DB.ph.find(p=>p.id=={pid}).rows.eg[0])"))
   out('prog',pg.evaluate(f"tkProg(DB.ph.find(p=>p.id=={pid}),'r')"))
   pg.click("[data-tkall='r']");pg.wait_for_timeout(200);out('nq_r_eg_after_all',pg.evaluate(f"nqLines(DB.ph.find(p=>p.id=={pid}),'r').filter(x=>x.t.id=='eg').length"))
   out('prog_all',pg.evaluate(f"tkProg(DB.ph.find(p=>p.id=={pid}),'r')"))
   out('nq_x_eg',pg.evaluate(f"nqLines(DB.ph.find(p=>p.id=={pid}),'x').filter(x=>x.t.id=='eg').map(x=>x.pt+' '+x.d)"))
   # migration of an old receipt
-  out('migration',pg.evaluate("(()=>{const p={sh:2,rows:{eg:[{nm:EG[0],sz:'قياسي',q:3,r:2,x:1}]}};migPK(p);return [p.rows.eg[0].rp,p.rows.eg[0].xp,p.m16]})()"))
+  out('migration',pg.evaluate("(()=>{const p={sh:2,rows:{eg:[{nm:EG[0],sz:'قياسي',q:3,r:2,x:1}]}};migPK(p);return [p.rows.eg[0].rpR,p.rows.eg[0].rpL,p.rows.eg[0].xpR,p.m16b]})()"))
   # warehouse surplus: pocket on its own
-  out('surplus',pg.evaluate(f"(()=>{{const p=DB.ph.find(p=>p.id=={pid}),r=p.rows.eg[1];r.r=2;r.x=1;r.rp=2;r.xp=0;return Object.values(whSurplus({{sh:p.sh,rows:{{eg:[r]}}}})).map(y=>y.ty+' '+y.q)}})()"))
+  out('surplus',pg.evaluate(f"(()=>{{const p=DB.ph.find(p=>p.id=={pid}),r=p.rows.eg[1];r.r=2;r.x=1;r.rpR=2;r.rpL=1;r.xpR=0;r.xpL=0;return Object.values(whSurplus({{sh:p.sh,rows:{{eg:[r]}}}})).map(y=>y.ty+' '+y.q)}})()"))
   # pull per part: header/side in stock, no pocket
   pg.evaluate("WU().length=0;DB.wlog=[];sv()")
   pg.evaluate(f"(()=>{{const p=DB.ph.find(p=>p.id=={pid}),t=T.find(x=>x.id=='eg'),r={{nm:EG[3],sz:'قياسي',q:2}};whParts(t,r,p.sh).filter(y=>!y.pk).forEach(y=>whAdd({{sh:y.sh,ty:y.ty,nm:y.nm,sec:y.sec,mat:y.mat,size:y.size}},10,'in','manual','t'));sv()}})()")
@@ -40,7 +40,7 @@ with sync_playwright() as pw:
   pg.evaluate(f"goV({{v:'ph',p:{pid},op:{{eg:true}},dr:{{eg:{{nm:EG[3],sz:'قياسي',q:2,egp:'كامل'}}}},q:V.q,fo:{{eg:1}}}})");pg.wait_for_timeout(200);pg.click("details[data-id=eg] [data-add=eg]");pg.wait_for_timeout(400)
   out('offer',pg.evaluate("(t=>t?t.innerText.replace(/\\s+/g,' '):null)(document.querySelector('.toast.rem'))"))
   pg.click('.toast.rem [data-whpull]');pg.wait_for_timeout(300)
-  out('after_pull',pg.evaluate(f"(r=>[r.q,r.r,r.wf,r.rp||0,r.wfp||0])(DB.ph.find(p=>p.id=={pid}).rows.eg.slice(-1)[0])"));out('stock_after',pg.evaluate("WU().map(x=>x.ty+' '+x.qty)"))
+  out('after_pull',pg.evaluate(f"(r=>[r.q,r.r,r.wf,r.rpR||0,r.wfpR||0])(DB.ph.find(p=>p.id=={pid}).rows.eg.slice(-1)[0])"));out('stock_after',pg.evaluate("WU().map(x=>x.ty+' '+x.qty)"))
   out('nq_new_row',pg.evaluate(f"nqLines(DB.ph.find(p=>p.id=={pid}),'r').filter(x=>x.r===DB.ph.find(p=>p.id=={pid}).rows.eg.slice(-1)[0]).map(x=>x.pt+' '+x.d)"))
   # print-missing: header/side in stock, pocket not -> row becomes acrylic only
   pg.evaluate(f"(()=>{{const p=DB.ph.find(p=>p.id=={pid});p.rows.eg.push({{nm:EG[3],sz:'قياسي',q:2}});sv()}})()")
