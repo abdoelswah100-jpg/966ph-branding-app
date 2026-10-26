@@ -1,8 +1,8 @@
 {
   "name": "966ph-branding",
-  "version": "1.4.0",
-  "appVersion": "v1.4",
-  "versionCode": 5,
+  "version": "1.5.0",
+  "appVersion": "v1.5",
+  "versionCode": 6,
   "private": true,
   "description": "966Ph Branding - Al-Dawaa Pharmacies ad quantities (966 Motors)",
   "scripts": {},
@@ -12,7 +12,8 @@
     "@capacitor/core": "^6.1.2",
     "@capacitor/filesystem": "^6.0.1",
     "@capacitor/share": "^6.0.2",
-    "@capgo/capacitor-native-biometric": "^6.0.0"
+    "@capgo/capacitor-native-biometric": "^6.0.0",
+    "@capacitor-mlkit/barcode-scanning": "^6.0.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

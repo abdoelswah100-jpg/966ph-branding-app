@@ -1,0 +1,44 @@
+// ---- camera QR scan (live): Google ML Kit inside the app, browser reader / jsQR otherwise
+let CSC=null,CSN=0,CLR='';// CLR = last code read in this continuous session (so the same invoice is not read twice)
+const MLK=()=>CAPN()&&CP('BarcodeScanner');
+const cSeq=()=>CU().cfg.seq!==0;
+async function cScan(){if(CSC)return;if(MLK()){try{if(await cScanN())return}catch(e){console.warn('mlkit',e);toastT('⚠ قارئ Google مش شغال على الجهاز ده، هيشتغل القارئ العادي')}}return cScanW()}
+function cScanUi(nat){const o=document.createElement('div');o.className='ovl cscan'+(nat?' nat':'');
+ o.innerHTML=`<div class="cvw">${nat?'':'<video playsinline muted></video>'}<div class="cfr"></div></div><p class="cmsg">وجّه الكاميرا على كود QR الفاتورة جوه المربع</p>${CSN?`<p class="ccnt">✓ اتحفظ ${CSN} فاتورة في الجلسة دي</p>`:''}<div class="czm" hidden><span>🔍</span><input type="range" class="czr" min="1" max="1" step="0.1" value="1"></div><div class="cbtn"><div class="c2b"><button data-ctorch="1" hidden>🔦 فلاش</button><label class="chk"><input type="checkbox" id="cseq"${cSeq()?' checked':''}> مسح متتالي</label></div><button class="pr" data-cshot="1">📷 صوّر من غير QR</button><button data-cscanx="1">✕ إغلاق</button></div>`;
+ document.body.appendChild(o);o.querySelector('.czr').addEventListener('input',e=>{if(CSC&&CSC.zoom)CSC.zoom(e.target.value)});return o}
+let CMSGT=0;function cScanMsg(o,m){const p=o.querySelector('.cmsg');if(!p)return;p.textContent=m;p.classList.add('w');clearTimeout(CMSGT);CMSGT=setTimeout(()=>{p.textContent='وجّه الكاميرا على كود QR الفاتورة جوه المربع';p.classList.remove('w')},2200)}
+function cShotInput(){const i=document.createElement('input');i.type='file';i.accept='image/*';i.setAttribute('capture','environment');i.onchange=()=>{if(i.files&&i.files.length)cFromImages([...i.files])};i.click()}
+async function cAfterScan(z,b){const d=cDraft({comp:z.comp,amt:z.amt,dt:z.dt,tm:z.tm,_alt:z.alt,src:'qr'});if(cSeq())d._seq=1;const k=b?await cImgPut(d.id,b):null;if(k)d.imgs=[k];snd('ok');if(navigator.vibrate)try{navigator.vibrate(60)}catch(e){}V.cq=[];cOpen(d)}
+async function cScanN(){const B=MLK();try{const s=await B.isSupported();if(s&&s.supported===false)return false}catch(e){}
+ let p;try{p=await B.requestPermissions()}catch(e){p=null}if(p&&p.camera&&!['granted','limited'].includes(p.camera)){alert('مفيش إذن للكاميرا. اسمح للتطبيق باستخدام الكاميرا من إعدادات الموبايل، أو استخدم "فاتورة من صورة".');return true}
+ const o=cScanUi(1);document.documentElement.classList.add('bscan');let busy=0;
+ const stop=async()=>{if(!CSC)return;CSC=null;document.documentElement.classList.remove('bscan');o.remove();try{await B.removeAllListeners()}catch(e){}try{await B.stopScan()}catch(e){}};
+ const hit=async raw=>{if(busy||!CSC)return;if(raw===CLR){cScanMsg(o,'✓ الفاتورة دي اتسجلت. وجّه على الفاتورة اللي بعدها');return}const z=zatca(raw);if(!z){cScanMsg(o,'⚠ الكود ده مش كود فاتورة ضريبية');return}busy=1;CLR=raw;await stop();cAfterScan(z,null)};
+ const on=ev=>{const bs=ev?(ev.barcodes||(ev.barcode?[ev.barcode]:[])):[];for(const b of bs){const r=b&&(b.rawValue||b.displayValue);if(r){hit(r);break}}};
+ CSC={stop,nat:1,shot:async()=>{await stop();cShotInput()},torch:async()=>{try{await B.toggleTorch()}catch(e){}},zoom:v=>{B.setZoomRatio({zoomRatio:+v}).catch(()=>{})}};
+ try{await B.addListener('barcodesScanned',on)}catch(e){}try{await B.addListener('barcodeScanned',on)}catch(e){}
+ try{await B.startScan({formats:['QR_CODE'],lensFacing:'BACK'})}catch(e){await stop();throw e}
+ try{const t=await B.isTorchAvailable();if(t&&t.available)o.querySelector('[data-ctorch]').hidden=false}catch(e){}
+ try{const a=await B.getMinZoomRatio(),c=await B.getMaxZoomRatio();if(c&&a&&c.zoomRatio>a.zoomRatio){const r=o.querySelector('.czr');r.min=a.zoomRatio;r.max=Math.min(c.zoomRatio,8);r.value=a.zoomRatio;o.querySelector('.czm').hidden=false}}catch(e){}
+ return true}
+async function cScanW(){if(!window.jsQR&&!('BarcodeDetector' in window))return alert('قارئ QR مش موجود في النسخة دي');if(!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia))return alert('الكاميرا مش متاحة هنا. استخدم "فاتورة من صورة".');
+ let st;try{st=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})}catch(e){return alert('مفيش إذن للكاميرا. اسمح للتطبيق باستخدام الكاميرا من إعدادات الموبايل، أو استخدم "فاتورة من صورة".')}
+ const o=cScanUi(0),v=o.querySelector('video');v.srcObject=st;await v.play().catch(()=>{});const tr=st.getVideoTracks()[0];let cap={},tor=false;try{cap=tr.getCapabilities?tr.getCapabilities():{}}catch(e){}
+ if(cap.focusMode&&cap.focusMode.includes('continuous'))tr.applyConstraints({advanced:[{focusMode:'continuous'}]}).catch(()=>{});
+ if(cap.torch)o.querySelector('[data-ctorch]').hidden=false;
+ if(cap.zoom&&cap.zoom.max>cap.zoom.min){const r=o.querySelector('.czr');r.min=cap.zoom.min;r.max=Math.min(cap.zoom.max,8);r.step=cap.zoom.step||0.1;r.value=(tr.getSettings&&tr.getSettings().zoom)||cap.zoom.min;o.querySelector('.czm').hidden=false}
+ let BD=null;try{if('BarcodeDetector' in window){const f=await BarcodeDetector.getSupportedFormats();if(f.includes('qr_code'))BD=new BarcodeDetector({formats:['qr_code']})}}catch(e){BD=null}
+ const cv=document.createElement('canvas'),x=cv.getContext('2d',{willReadFrequently:true});
+ const stop=()=>{if(!CSC)return;st.getTracks().forEach(t=>t.stop());o.remove();CSC=null};
+ const frame=()=>new Promise(ok=>{cv.width=v.videoWidth;cv.height=v.videoHeight;x.drawImage(v,0,0);cv.toBlob(b=>ok(b),'image/jpeg',0.85)});
+ const done=async z=>{const b=await frame();stop();if(z)return cAfterScan(z,b);const d=cDraft({src:'img'});const k=b?await cImgPut(d.id,b):null;if(k)d.imgs=[k];snd('tick');V.cq=[];cOpen(d)};
+ CSC={stop,shot:()=>done(null),torch:()=>{tor=!tor;tr.applyConstraints({advanced:[{torch:tor}]}).catch(()=>{})},zoom:z=>{tr.applyConstraints({advanced:[{zoom:+z}]}).catch(()=>{})}};
+ let n=0,bad=0;const got=r=>{if(!r)return false;if(r===CLR){if(Date.now()-bad>2500){bad=Date.now();cScanMsg(o,'✓ الفاتورة دي اتسجلت. وجّه على الفاتورة اللي بعدها')}return false}const z=zatca(r);if(z){CLR=r;done(z);return true}if(Date.now()-bad>2500){bad=Date.now();cScanMsg(o,'⚠ الكود ده مش كود فاتورة ضريبية')}return false};
+ const loop=async()=>{if(!CSC)return;const vw=v.videoWidth,vh=v.videoHeight;if(vw){n++;
+   if(BD){try{const R=await BD.detect(v);for(const r of R)if(got(r.rawValue))return}catch(e){}}
+   if(window.jsQR&&(!BD||n%2==0)){const m=n%3;let W,H;if(m<2){const s=Math.round(Math.min(vw,vh)*0.72),sx=(vw-s)>>1,sy=(vh-s)>>1,T=Math.min(s,760);W=H=T;cv.width=T;cv.height=T;x.drawImage(v,sx,sy,s,s,0,0,T,T)}else{W=Math.min(960,vw);H=Math.round(vh*W/vw);cv.width=W;cv.height=H;x.drawImage(v,0,0,W,H)}
+    let d=x.getImageData(0,0,W,H).data;if(m==1)d=qrGray(d,W,H,1);const r=jsQR(d,W,H,{inversionAttempts:m==1?'dontInvert':'attemptBoth'});if(r&&r.data&&got(r.data))return}}
+  if(CSC)setTimeout(loop,BD?90:60)};loop()}
+// read a QR from a photo: ML Kit inside the app, then the browser reader, then jsQR
+async function qrFromBlobN(blob){const B=MLK(),FS=CP('Filesystem');if(!B||!FS||!B.readBarcodesFromImage)return null;try{const w=await FS.writeFile({path:'qr-'+Date.now()+'.jpg',data:await b64of(blob),directory:'CACHE'});let R;try{R=await B.readBarcodesFromImage({path:w.uri,formats:['QR_CODE']})}finally{FS.deleteFile({path:w.uri}).catch(()=>{})}for(const b of (R&&R.barcodes)||[]){const z=zatca(b.rawValue||'');if(z)return z}}catch(e){console.warn('mlkit img',e)}return null}
+async function qrFromBlobB(blob){try{if(!('BarcodeDetector' in window))return null;const f=await BarcodeDetector.getSupportedFormats();if(!f.includes('qr_code'))return null;const bm=await createImageBitmap(blob),R=await new BarcodeDetector({formats:['qr_code']}).detect(bm);for(const r of R){const z=zatca(r.rawValue);if(z)return z}}catch(e){}return null}
