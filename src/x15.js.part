@@ -1,0 +1,28 @@
+// ---------- v1.5 extras ----------
+// print summary after the warehouse stock: what is still in stock is not printed again
+function whNet(p){const c=JSON.parse(JSON.stringify(p)),st={},used=[];WU().forEach(x=>{const k=whKey(x);st[k]=(st[k]||0)+(+x.qty||0)});
+ TY(c).forEach(t=>{const rs=c.rows[t.id];if(t.auto||!rs||!rs.length)return;c.rows[t.id]=rs.map((r,i)=>{let q=qn(r)-(+r.wf||0);if(q<=0)return null;const P=whParts(t,r,c.sh);
+   if(P.length){const can=Math.min(q,...P.map(y=>Math.floor(((st[whKey(y)]||0)+1e-9)/y.f)));if(can>0){P.forEach(y=>st[whKey(y)]=wq(st[whKey(y)]-can*y.f));used.push({tid:t.id,i,n:can,t:t.n,z:t.z(r,c.sh)});q-=can}}
+   if(q<=0)return null;if(r.q!=null)r.q=q;return r}).filter(Boolean)});
+ const pre=TY(p).reduce((a,t)=>a+(p.rows[t.id]||[]).reduce((b,r)=>b+Math.min(qn(r),+r.wf||0),0),0);return {p:c,used,pre}}
+function sxBox(p,N){if(!WU().length&&!N.pre)return '';const on=!!V.sxw;
+ return `<div class="sxw np"><label class="chk"><input type="checkbox" id="sxw"${on?' checked':''}> اطبع الناقص بس (اخصم الموجود في المخزن)</label>${on?`${N.used.length?`<div class="ph"><small>📦 موجود في المخزن ومش هيتطبع:</small>${N.used.map(u=>`<small>• ${esc(u.t)} · ${esc(u.z)} — <b>${u.n}</b></small>`).join('')}<button class="pr" data-sxpull="1">${ic('box')}اسحبهم من المخزن للصيدلية</button></div>`:'<small>مفيش حاجة من بنود الصيدلية دي موجودة في المخزن.</small>'}${N.pre?`<small>✓ ${N.pre} قطعة اتسحبت من المخزن قبل كده ومش هتتطبع.</small>`:''}`:''}</div>`}
+function sxPull(p){const N=whNet(p);let n=0;N.used.forEach(u=>{const t=T.find(x=>x.id==u.tid),r=(p.rows[u.tid]||[])[u.i];if(!t||!r)return;whParts(t,r,p.sh).forEach(y=>{const x=whFind(whKey(y));if(x)whAdd(x,-u.n*y.f,'out','ph:'+p.no,'سحب لملخص الطباعة')});r.wf=(+r.wf||0)+u.n;r.r=Math.min(qn(r),(+r.r||0)+u.n);n+=u.n});sv();snd('ok');render();toastT(`✓ اتسحب ${n} من المخزن واتحسبوا مستلمين`)}
+// custody: alert when the remaining is below the limit (default 2000, 0 = off)
+const cAl=()=>{const v=CU().cfg.al;return v===undefined||v===''||v===null?2000:+v||0};
+function cAlert(){if(!DB||!DB.cust)return '';const C=CU(),ks=Object.keys(C.m).sort();if(!ks.length)return '';const k=ks[ks.length-1],M=C.m[k];if(!M||!(M.items||[]).length)return '';const r=cRem(M),a=cAl();return a&&r<a?{k,r,a}:''}
+const cAlHtml=(home)=>{const x=cAlert();return x?`<div class="alr cal"><small>⚠ رصيد العهدة المتبقي <b>${f2(x.r)}</b> أقل من ${f2(x.a)} (شهر ${cMoLab(x.k)}). اطلب تعزيز العهدة.</small>${home?'<button data-tab="cust">العهدة</button>':''}</div>`:''};
+// before / after photos: share them (WhatsApp)
+async function phoShare(p){const F=[];for(const[sl,t] of [['b','قبل'],['a','بعد']])for(const[i,x] of phoList(p,sl).entries()){const b=await idbGet(phoKey(p.id,sl,x.k));if(b)F.push({b,n:`صيدلية ${p.no} - ${t} ${i+1}.jpg`})}
+ if(!F.length)return alert('مفيش صور على الجهاز ده');const tt=toast('جاري تجهيز الصور…');
+ try{if(CAPN()&&CP('Share')&&CP('Filesystem')){const FS=CP('Filesystem'),U2=[];for(const f of F){const w=await FS.writeFile({path:f.n,data:await b64of(f.b),directory:'CACHE'});U2.push(w.uri)}tt.remove();await CP('Share').share({title:'صور صيدلية '+p.no,files:U2,dialogTitle:'صور صيدلية '+p.no}).catch(()=>{});return}
+  const fl=F.map(f=>new File([f.b],f.n,{type:f.b.type||'image/jpeg'}));tt.remove();if(navigator.canShare&&navigator.canShare({files:fl})){await navigator.share({files:fl,title:'صور صيدلية '+p.no}).catch(()=>{});return}
+  F.forEach(f=>dl(f.n,f.b,f.b.type||'image/jpeg'))}finally{tt.remove()}}
+function x15Click(d,b){
+ if(d.sxpull){const p=curP();if(p&&confirm('هيتخصم الموجود من المخزن ويتحسب مستلم في الصيدلية. تكمل؟'))sxPull(p);return 1}
+ if(d.phshare){const p=curP();if(p)phoShare(p);return 1}
+ return 0}
+function x15Change(x){
+ if(x.id=='sxw'){V.sxw=x.checked;render();return 1}
+ return 0}
+document.addEventListener('input',e=>{const x=e.target;if(x.id=='mqf'){V.mqf=x.value;render();const i=$('#mqf');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}}});

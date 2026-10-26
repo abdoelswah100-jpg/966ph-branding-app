@@ -2,7 +2,7 @@ name: Build APK
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'v*' ]
   workflow_dispatch:
 
 permissions:
@@ -32,20 +32,31 @@ jobs:
           mkdir -p www/fonts
           curl -fsSL -o www/fonts/Cairo.ttf "https://github.com/google/fonts/raw/main/ofl/cairo/Cairo%5Bslnt%2Cwght%5D.ttf" || echo "Cairo font download failed, device font will be used"
 
+      - name: Trial app identity (any branch except main)
+        if: github.ref_name != 'main'
+        run: |
+          node -e "const f='capacitor.config.json',c=require('./'+f);c.appId+='.test';c.appName='966Ph تجريبي';require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
+          sed -i 's#<head>#<head><script>window.T966=1</script>#' www/index.html
+          grep -c "window.T966" www/index.html
+          cat capacitor.config.json
+
       - name: Add Android platform
         run: npx cap add android
 
       - name: Icons and splash screens
-        run: npx @capacitor/assets generate --android --iconBackgroundColor "#0A1F7A" --iconBackgroundColorDark "#0A1F7A" --splashBackgroundColor "#061233" --splashBackgroundColorDark "#061233"
+        run: |
+          BG="#0A1F7A"; if [ "${{ github.ref_name }}" != "main" ]; then BG="#F28C05"; fi
+          npx @capacitor/assets generate --android --iconBackgroundColor "$BG" --iconBackgroundColorDark "$BG" --splashBackgroundColor "#061233" --splashBackgroundColorDark "#061233"
 
       - name: Version, permissions and storage
         run: |
           VN=$(node -p "require('./package.json').appVersion")
+          if [ "${{ github.ref_name }}" != "main" ]; then VN="$VN-test.${{ github.run_number }}"; fi
           VC=$(node -p "require('./package.json').versionCode")
           echo "VN=$VN" >> $GITHUB_ENV
           sed -i -E "s/versionCode [0-9]+/versionCode $VC/; s/versionName \"[^\"]*\"/versionName \"$VN\"/" android/app/build.gradle
           M=android/app/src/main/AndroidManifest.xml
-          sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.USE_BIOMETRIC" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />#' $M
+          sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="android.permission.USE_BIOMETRIC" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-permission android:name="android.permission.FLASHLIGHT" />\n    <uses-feature android:name="android.hardware.camera" android:required="false" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />#' $M
           sed -i 's#<application#<application android:requestLegacyExternalStorage="true"#' $M
           grep -n "permission\|requestLegacy" $M
 
@@ -89,3 +100,4 @@ jobs:
           tag_name: ${{ env.VN }}
           name: 966Ph Branding ${{ env.VN }}
           files: 966Ph-Branding-${{ env.VN }}.apk
+          prerelease: ${{ github.ref_name != 'main' }}

@@ -32,7 +32,7 @@ with sync_playwright() as pw:
     q0=pg.evaluate(f"WU().find(x=>x.id=={fid}).qty");pg.click(f'button[data-whst="{fid}:1"]');pg.wait_for_timeout(150);res['plus']=pg.evaluate(f"WU().find(x=>x.id=={fid}).qty-{q0}")
     pg.evaluate(f"WU().find(x=>x.id=={fid}).min=5;sv();render()");pg.wait_for_timeout(200);res['low_badge']=pg.evaluate("[whLow(),(document.querySelector('.bnav [data-tab=wh] .nb')||{}).textContent]")
     # manual add
-    pg.click('button[data-whadd]');pg.wait_for_timeout(200);pg.select_option('select[data-wef=ty]','Door sticker');pg.wait_for_timeout(150);pg.fill('input[data-wef=nm]','اسحب / ادفع');pg.fill('input[data-wef=size]','10×30');pg.fill('input[data-wef=qty]','12');pg.click('button[data-whsave]');pg.wait_for_timeout(300)
+    pg.click('button[data-wha]');pg.wait_for_timeout(200);pg.click('button[data-whadd]');pg.wait_for_timeout(200);pg.select_option('select[data-wef=ty]','Door sticker');pg.wait_for_timeout(150);pg.fill('input[data-wef=nm]','اسحب / ادفع');pg.fill('input[data-wef=size]','10×30');pg.fill('input[data-wef=qty]','12');pg.click('button[data-whsave]');pg.wait_for_timeout(300)
     res['manual']=pg.evaluate("WU().filter(x=>x.ty=='Door sticker').map(x=>[x.nm,x.qty,x.unit])")
     # inventory
     pg.click('button[data-whinv]');pg.wait_for_timeout(300)
