@@ -36,8 +36,8 @@ jobs:
         if: github.ref_name != 'main'
         run: |
           node -e "const f='capacitor.config.json',c=require('./'+f);c.appId+='.test';c.appName='966Ph تجريبي';require('fs').writeFileSync(f,JSON.stringify(c,null,2))"
-          sed -i 's#<head>#<head><script>window.T966=1</script>#' www/index.html
-          grep -c "window.T966" www/index.html
+          sed -i '0,/<head>/s##<head><script>window.T966=1</script>#' www/index.html
+          test "$(grep -o 'window.T966=1' www/index.html | wc -l)" = "1"
           cat capacitor.config.json
 
       - name: Add Android platform
