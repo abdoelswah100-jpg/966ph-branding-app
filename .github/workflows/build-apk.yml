@@ -49,10 +49,14 @@ jobs:
           npx @capacitor/assets generate --android --iconBackgroundColor "$BG" --iconBackgroundColorDark "$BG" --splashBackgroundColor "#061233" --splashBackgroundColorDark "#061233"
 
       - name: Version, permissions and storage
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           VN=$(node -p "require('./package.json').appVersion")
-          if [ "${{ github.ref_name }}" != "main" ]; then VN="$VN-test.${{ github.run_number }}"; fi
           VC=$(node -p "require('./package.json').versionCode")
+          if [ "${{ github.ref_name }}" != "main" ]; then VN="$VN-test.${{ github.run_number }}"; fi
+          TAG="$VN"; if gh release view "$VN" >/dev/null 2>&1; then TAG="$VN-r$VC"; fi
+          echo "TAG=$TAG" >> $GITHUB_ENV
           echo "VN=$VN" >> $GITHUB_ENV
           sed -i -E "s/versionCode [0-9]+/versionCode $VC/; s/versionName \"[^\"]*\"/versionName \"$VN\"/" android/app/build.gradle
           M=android/app/src/main/AndroidManifest.xml
@@ -97,7 +101,7 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.VN }}
+          tag_name: ${{ env.TAG }}
           name: 966Ph Branding ${{ env.VN }}
           files: 966Ph-Branding-${{ env.VN }}.apk
           prerelease: ${{ github.ref_name != 'main' }}
