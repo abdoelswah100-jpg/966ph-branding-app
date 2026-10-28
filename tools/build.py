@@ -7,10 +7,11 @@ R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 s = open(os.path.join(R, 'src/app.html'), encoding='utf-8').read()
 logo = open(os.path.join(R, 'src/logo.txt'), encoding='utf-8').read().strip()
 bimg = open(os.path.join(R, 'src/bimg.json'), encoding='utf-8').read().strip()
+cdocs = open(os.path.join(R, 'src/cdocs.json'), encoding='utf-8').read().strip() if os.path.exists(os.path.join(R, 'src/cdocs.json')) else '{}'
 for k, n in (('__LOGO_DATA_URI__', None), ('/*__BIMG__*/{}', 1), ('/*__FONT_FACE__*/', 1)):
     if n and s.count(k) != n: sys.exit('placeholder count wrong: ' + k)
 jq = open(os.path.join(R, 'src/vendor/jsQR.js'), encoding='utf-8').read().replace('</script', '<\\/script')
-full = s.replace('__LOGO_DATA_URI__', logo).replace('/*__BIMG__*/{}', '/*__BIMG__*/' + bimg).replace('<script>/*__JSQR__*/</script>', '<script>/* jsQR 1.4.0 (Apache-2.0) https://github.com/cozmo/jsQR */\n' + jq + '</script>', 1)
+full = s.replace('__LOGO_DATA_URI__', logo).replace('/*__CDOCS__*/{}', '/*__CDOCS__*/' + cdocs).replace('/*__BIMG__*/{}', '/*__BIMG__*/' + bimg).replace('<script>/*__JSQR__*/</script>', '<script>/* jsQR 1.4.0 (Apache-2.0) https://github.com/cozmo/jsQR */\n' + jq + '</script>', 1)
 ver = re.search(r"VER='(v[\d.]+)'", s).group(1)
 os.makedirs(os.path.join(R, 'dist'), exist_ok=True)
 out = os.path.join(R, 'dist', '966Ph Branding ' + ver + '.html')

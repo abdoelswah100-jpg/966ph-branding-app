@@ -1,0 +1,62 @@
+# v1.8: Pharmacy on wall shelves, wall sticker totals by kind, Sticker outdoor, sticker rolls + roll alert, company documents.
+import base64
+from playwright.sync_api import sync_playwright
+W='/home/claude/work/';APP='file://'+W+'new.html';D=open(W+'out13/966-data-v1.5.json',encoding='utf-8').read()
+def out(k,v):print(k,'=>',v)
+with sync_playwright() as pw:
+  br=pw.chromium.launch(executable_path='/opt/pw-browsers/chromium-1194/chrome-linux/chrome');ctx=br.new_context(viewport={'width':400,'height':860},accept_downloads=True);pg=ctx.new_page();E=[];pg.on('pageerror',lambda e:E.append(str(e)));DL=[];pg.on('dialog',lambda x:(DL.append(x.message[:60]),x.accept('السجل التجاري') if x.type=='prompt' else x.accept()))
+  pg.goto(APP);pg.wait_for_timeout(300);pg.evaluate("d=>{localStorage.clear();localStorage.setItem('ads',d)}",D);pg.reload();pg.wait_for_timeout(1500)
+  pid=pg.evaluate("DB.ph.find(p=>p.no=='843').id")
+  # Pharmacy on Side Acrylic Shelves Wall
+  pg.evaluate(f"goV({{v:'ph',p:{pid},op:{{saw:true}},dr:{{}},q:V.q,fo:{{saw:1}}}})");pg.wait_for_timeout(200)
+  out('saw_sections',pg.evaluate("[...document.querySelectorAll('details[data-id=saw] select[data-k=sec] option')].map(o=>o.value)"))
+  pg.select_option("details[data-id=saw] select[data-k=sec]",'Pharmacy');pg.wait_for_timeout(200);pg.click("details[data-id=saw] [data-add=saw]");pg.wait_for_timeout(200)
+  out('saw_z',pg.evaluate(f"(p=>T.find(t=>t.id=='saw').z(p.rows.saw.slice(-1)[0],p.sh))(DB.ph.find(p=>p.id=={pid}))"))
+  # Sticker outdoor
+  pg.evaluate(f"goV({{v:'ph',p:{pid},op:{{so:true}},dr:{{}},q:V.q,fo:{{so:1}}}})");pg.wait_for_timeout(200)
+  out('so_names',pg.evaluate("[...document.querySelectorAll('details[data-id=so] select[data-k=nm] option')].map(o=>o.value)"))
+  pg.select_option("details[data-id=so] select[data-k=nm]",'طلباتك');pg.wait_for_timeout(150)
+  for k,v in [('h','120'),('w','60')]:pg.fill(f"details[data-id=so] input[data-k={k}]",v);pg.dispatch_event(f"details[data-id=so] input[data-k={k}]",'input')
+  pg.click("details[data-id=so] [data-add=so]");pg.wait_for_timeout(200)
+  pg.select_option("details[data-id=so] select[data-k=nm]",'أخرى');pg.wait_for_timeout(150);out('so_other_field',pg.evaluate("!!document.querySelector('details[data-id=so] input[data-k=nx]')"))
+  for k,v in [('nx','نقاط الولاء'),('h','80'),('w','40'),('mg','5')]:pg.fill(f"details[data-id=so] input[data-k={k}]",v);pg.dispatch_event(f"details[data-id=so] input[data-k={k}]",'input')
+  pg.click("details[data-id=so] [data-add=so]");pg.wait_for_timeout(200)
+  out('so_z',pg.evaluate(f"(p=>p.rows.so.map(r=>T.find(t=>t.id=='so').z(r,p.sh)))(DB.ph.find(p=>p.id=={pid}))"))
+  out('so_nq',pg.evaluate(f"nqLines(DB.ph.find(p=>p.id=={pid}),'r').filter(x=>x.t.id=='so').map(x=>[x.nm,x.sz,x.mat,x.d])"))
+  out('so_not_stocked',pg.evaluate(f"(p=>whParts(T.find(t=>t.id=='so'),p.rows.so[0],p.sh).length)(DB.ph.find(p=>p.id=={pid}))"))
+  # wall sticker totals by kind + roll alert
+  pg.evaluate(f"goV({{v:'sum',p:{pid},op:{{}},dr:{{}},q:V.q}})");pg.wait_for_timeout(300)
+  out('ws_totals',pg.evaluate("(()=>{const h=[...document.querySelectorAll('#rp th')].find(t=>t.textContent=='إجمالي الأمتار (م²)');return h?[...h.closest('table').querySelectorAll('tr')].slice(1).map(r=>r.innerText.replace(/\\s+/g,' ')):null})()"))
+  out('so_in_summary',pg.evaluate("document.querySelector('#rp').innerText.includes('مراعاة مسافة 5 سم')&&document.querySelector('#rp').innerText.includes('مراعاة المسافة المناسبة')"))
+  out('roll_need',pg.evaluate(f"rlNeed(DB.ph.find(p=>p.id=={pid}))"))
+  out('roll_box_outside',pg.evaluate("!!document.querySelector('.rlw')&&!document.querySelector('#rp .rlw')"))
+  out('roll_box',pg.evaluate("[...document.querySelectorAll('.rlw .rlr')].map(r=>r.innerText.replace(/\\s+/g,' '))"))
+  # rolls in warehouse
+  pg.evaluate("goV({v:'wh',op:{},dr:{},q:V.q})");pg.click('[data-wha]');pg.wait_for_timeout(200);pg.click('[data-whr]');pg.wait_for_timeout(200)
+  pg.select_option("select[data-wrf=sec]",'Beauty');pg.fill("input[data-wrf=n]",'1');pg.dispatch_event("input[data-wrf=n]",'input');pg.fill("input[data-wrf=m]",'23');pg.dispatch_event("input[data-wrf=m]",'input')
+  out('roll_preview',pg.evaluate("$('#wrtot').textContent"));pg.click('[data-wrsave]');pg.wait_for_timeout(300)
+  pg.click('[data-wha]');pg.wait_for_timeout(200);pg.click('[data-whr]');pg.wait_for_timeout(200);pg.select_option("select[data-wrf=k]",'ثلجي شفاف');pg.wait_for_timeout(150);pg.fill("input[data-wrf=n]",'2');pg.dispatch_event("input[data-wrf=n]",'input');pg.click('[data-wrsave]');pg.wait_for_timeout(300)
+  out('wh_rolls',pg.evaluate("WU().filter(x=>x.ty==RLTY).map(x=>[x.nm,x.sec,x.qty,x.unit,rlTxt(x.qty)])"))
+  out('wh_list_roll_chip',pg.evaluate("[...document.querySelectorAll('.whc')].filter(c=>c.innerText.includes('رول ستيكر')).map(c=>c.querySelector('.rshc').textContent)"))
+  pg.evaluate(f"goV({{v:'sum',p:{pid},op:{{}},dr:{{}},q:V.q}})");pg.wait_for_timeout(300)
+  out('roll_box_after_stock',pg.evaluate("[...document.querySelectorAll('.rlw .rlr')].map(r=>r.innerText.replace(/\\s+/g,' '))"))
+  btn=pg.evaluate("(b=>b?b.dataset.rreq:null)(document.querySelector('.rlw .rlr.bad [data-rreq]'))");out('req_btn',btn)
+  if btn:
+    pg.click(f".rlw [data-rreq='{btn}']");pg.wait_for_timeout(200)
+    out('req_in_summary',pg.evaluate("(h=>h?[...h.nextElementSibling.querySelectorAll('tr')].slice(1).map(r=>r.innerText.replace(/\\s+/g,' ')):null)([...document.querySelectorAll('#rp h3')].find(h=>h.textContent=='مطلوب رولات'))"))
+    out('req_in_text',[l for l in pg.evaluate("sumText(curP())").split('\n') if 'رول' in l])
+    pg.click(".rlw .rlq [data-rreq$=':-1']");pg.wait_for_timeout(200);out('req_cleared',pg.evaluate("Object.keys(curP().rr||{}).length"))
+  # company documents
+  pg.click('.hm-btn, [data-menu], button[aria-label]') if False else None
+  pg.evaluate("goV({v:'cdoc',op:{},dr:{},q:V.q})");pg.wait_for_timeout(300)
+  out('menu_item',pg.evaluate("MENU.some(m=>m[0]=='cdoc')"))
+  out('docs',pg.evaluate("[...document.querySelectorAll('.cdoc')].map(c=>c.querySelector('.cdh b').textContent+' | exp:'+!!c.querySelector('.alr'))"))
+  out('builtin_pdf',pg.evaluate("cdBlob(cdList()[0]).then(b=>b.arrayBuffer()).then(a=>[a.byteLength,new TextDecoder().decode(new Uint8Array(a).slice(0,5))])"))
+  out('save_name',pg.evaluate("(x=>(x.fn||x.n))(cdList().find(y=>y.id=='na'))"))
+  pg.evaluate("V.cdt='na'");pg.set_input_files('#cdin',W+'docs18/a.pdf');pg.wait_for_timeout(400)
+  out('replaced',pg.evaluate("(x=>[x.own,!!x.at,x.exp])(cdList().find(x=>x.id=='na'))"),);out('replaced_view',pg.evaluate("[...document.querySelectorAll('.cdoc')][1].innerText.replace(/\\s+/g,' ').slice(0,80)"))
+  out('replaced_blob',pg.evaluate("cdBlob(cdList().find(x=>x.id=='na')).then(b=>b.size)"))
+  pg.evaluate("V.cdt='new'");pg.set_input_files('#cdin',W+'docs18/b.pdf');pg.wait_for_timeout(400);out('added',pg.evaluate("cdList().map(x=>x.n)"))
+  out('backup_has_docs',pg.evaluate("fullBackupWithFiles().then(o=>Object.keys(o._files).filter(k=>k.startsWith('doc:')).length)"))
+  pg.click("[data-cdb='na']");pg.wait_for_timeout(300);out('restored',pg.evaluate("(x=>[!!x.own,x.exp])(cdList().find(x=>x.id=='na'))"))
+  out('ver',pg.evaluate("VER"));out('ERRS',E);br.close()

@@ -27,7 +27,7 @@ with sync_playwright() as pw:
     pg.click('button[data-lang="en"]'); pg.wait_for_timeout(200)
     res['dir'] = pg.evaluate('document.documentElement.dir'); chk('01_lang_en')
     pg.click('button[data-tab="home"]'); chk('02_home')
-    pg.click('button.hmb'); pg.wait_for_timeout(100); pg.screenshot(path='s6/02b_menu.png'); pg.mouse.click(200, 700)
+    pg.click('button.hmb'); pg.wait_for_timeout(100); pg.screenshot(path='s6/02b_menu.png'); pg.evaluate("document.querySelector('.mshade').click()")
     pid = pg.evaluate("DB.ph.find(p=>p.no=='809').id")
     pg.evaluate(f"V={{v:'ph',p:{pid},op:{{ws:true,eg:true,__pi:true}},dr:{{}},q:V.q}};render()"); chk('03_ph')
     res['opt_values_ar'] = pg.evaluate("[...document.querySelectorAll('#crg option')].slice(0,2).map(o=>[o.value,o.text])")
