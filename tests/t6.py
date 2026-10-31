@@ -41,7 +41,7 @@ with sync_playwright() as pw:
     pg.evaluate("V={v:'calc',op:{},dr:{},q:V.q};render()");pg.wait_for_timeout(200); chk('08_calc')
     pg.click('button[data-tab="revhub"]'); chk('09_revhub')
     pg.click('button[data-rv="2026-10"]'); chk('10_rev')
-    pg.click('button[data-tab="all"]')
+    pg.evaluate("document.querySelector('[data-menu]').click()"); pg.wait_for_timeout(150); pg.click('button[data-mgo="all"]')
     for am in ['sec', 'mg', 'sz', 'cmp', 'ph']:
         pg.click(f'button[data-am="{am}"]'); chk('11_all_' + am)
     open('s6/all_ph.pdf', 'wb').write(b64(pg, 'buildPdf()'))
