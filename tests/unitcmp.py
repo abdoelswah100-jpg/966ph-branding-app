@@ -30,4 +30,4 @@ for k in a:
         print('DIFF', k)
         if isinstance(a[k], list):
             for i, (x, y) in enumerate(zip(a[k], b[k])):
-                if x != y: print('  first diff at', i, str(x)[:300], '|||', str(y)[:300]); break
+                if x != y: print("  diff at", i, i % 7 if i < 7*len(R[sys.argv[1]]["prog"]) else "list")
