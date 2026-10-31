@@ -1,0 +1,63 @@
+# v2.1 on the owner's 31-10 backup: extra item, remainder by the customer, report tables, monthly batch
+from playwright.sync_api import sync_playwright
+W='/home/claude/work/';APP='file://'+W+'new21.html';D=open(W+'bk1031/data.json',encoding='utf-8').read()
+def out(k,v):print(k,'=>',v)
+with sync_playwright() as pw:
+  br=pw.chromium.launch(executable_path='/opt/pw-browsers/chromium-1194/chrome-linux/chrome');pg=br.new_page(viewport={'width':400,'height':860},accept_downloads=True);E=[];pg.on('pageerror',lambda e:E.append(str(e)));DL=[];pg.on('dialog',lambda x:(DL.append(x.message[:90]),x.accept()))
+  pg.goto(APP);pg.wait_for_timeout(300);pg.evaluate("d=>{localStorage.clear();localStorage.setItem('ads',d)}",D);pg.reload();pg.wait_for_timeout(1800)
+  pid=pg.evaluate("DB.ph.find(p=>p.no=='809').id")
+  pg.evaluate(f"goV({{v:'ph',p:{pid},op:{{fh:true}},dr:{{}},q:V.q,fo:{{fh:1}}}})");pg.wait_for_timeout(300)
+  out('xi_field',pg.evaluate("[!!document.querySelector('details[data-id=fh] select[data-k=xi]'),!!document.querySelector('details[data-id=fh] [data-k=xn]')]"))
+  pg.select_option("details[data-id=fh] select[data-k=sec]",'Medicated');pg.wait_for_timeout(200)
+  pg.select_option("details[data-id=fh] select[data-k=xi]",'نعم');pg.wait_for_timeout(200)
+  out('xn_shown',pg.evaluate("!!document.querySelector('details[data-id=fh] [data-k=xn]')"))
+  pg.fill("details[data-id=fh] input[data-k=q]",'2');pg.dispatch_event("details[data-id=fh] input[data-k=q]",'input')
+  n0=pg.evaluate("curP().rows.fh.length");pg.click("details[data-id=fh] [data-add=fh]");pg.wait_for_timeout(300)
+  out('added',pg.evaluate("(r=>[curP().rows.fh.length,r.sec,r.nm,r.q,r.xi,r.xn])(curP().rows.fh.slice(-1)[0])")+[n0,DL[-1:] ])
+  out('row_tag',pg.evaluate("[...document.querySelectorAll('details[data-id=fh] .xit')].map(e=>e.textContent)"))
+  # a normal Floor Header row: xi undefined
+  out('normal_rows_clean',pg.evaluate("curP().rows.fh.slice(0,-1).every(r=>!('xi' in r))"))
+  # received 2, executed 0, then remainder by the customer
+  i=pg.evaluate("curP().rows.fh.length-1");pg.evaluate(f"(r=>{{r.r=2;r.x=0;sv()}})(curP().rows.fh[{i}])")
+  # pockets 6+6 executed 5+5
+  eg=pg.evaluate("curP().rows.eg.findIndex(r=>egSub(r,curP().sh))");out('eg_idx',eg)
+  if eg>=0: pg.evaluate(f"(r=>{{r.pR=6;r.pL=6;r.rpR=5;r.rpL=5;r.xpR=5;r.xpL=5;sv()}})(curP().rows.eg[{eg}])")
+  pg.evaluate(f"goV({{v:'exec',p:{pid},op:{{}},dr:{{}},q:V.q}})");pg.wait_for_timeout(300)
+  out('nq_before',pg.evaluate("[nqLines(curP(),'x').length,nqLines(curP(),'r').length,tkProg(curP(),'x').pc]"))
+  pg.click(f"[data-tcx='fh:{i}']");pg.wait_for_timeout(200)
+  if eg>=0: pg.click(f"[data-tcx='eg:{eg}']");pg.wait_for_timeout(200)
+  out('nq_after',pg.evaluate("[nqLines(curP(),'x').length,nqLines(curP(),'r').length,tkProg(curP(),'x').pc,tkProg(curP(),'r').pc]"))
+  out('kept',pg.evaluate(f"[curP().rows.fh[{i}].r,curP().rows.fh[{i}].x,curP().rows.fh[{i}].cx]"+(f",[curP().rows.eg[{eg}].xpR,curP().rows.eg[{eg}].cx]" if eg>=0 else "")))
+  out('cx_tags',pg.evaluate("[...document.querySelectorAll('#rp .cxt')].length"))
+  out('surplus_to_wh',pg.evaluate("whPlan(curP()).filter(x=>/Floor Header/.test(x.ty)).map(x=>[x.nm,x.sec,x.dl])"))
+  # management report
+  pg.evaluate(f"goV({{v:'sum',sm:'mgmt',p:{pid},op:{{}},dr:{{}},q:V.q}})");pg.wait_for_timeout(400)
+  out('mg_h3',pg.evaluate("[...document.querySelectorAll('#rp h3')].map(h=>h.innerText)"))
+  out('mg_pk',pg.evaluate("(h=>h?[...h.nextElementSibling.querySelectorAll('tr')].map(r=>r.innerText.replace(/\\s+/g,' ')):null)([...document.querySelectorAll('#rp h3')].find(h=>/Pocket/.test(h.innerText)))"))
+  out('mg_xi',pg.evaluate("[...document.querySelectorAll('#rp .xitb tr')].map(r=>r.innerText.replace(/\\s+/g,' '))"))
+  out('mg_ab',pg.evaluate("(h=>h?[...h.nextElementSibling.querySelectorAll('tr')].map(r=>r.innerText.replace(/\\s+/g,' ')):null)([...document.querySelectorAll('#rp h3')].find(h=>/Acrylic boards/.test(h.innerText)))"))
+  out('main_has_medicated_fh',pg.evaluate("[...document.querySelectorAll('#rt tr')].some(r=>/Floor Header/.test(r.innerText)&&/11\\.5×57/.test(r.innerText))"))
+  # edit the reason in the report
+  pg.click('.xnc');pg.keyboard.press('Control+A');pg.keyboard.type('العميل غيّر التصميم');pg.click('#rp h3');pg.wait_for_timeout(300)
+  out('reason_saved',pg.evaluate(f"curP().rows.fh[{i}].xn"))
+  pg.evaluate(f"goV({{v:'sum',sm:'sum',p:{pid},op:{{}},dr:{{}},q:V.q}})");pg.wait_for_timeout(400)
+  out('summary_note',pg.evaluate("[...document.querySelectorAll('#rp td')].map(t=>t.innerText).filter(t=>/بند إضافي|بطلب العميل/.test(t))"))
+  # review card
+  pg.evaluate(f"revStart(curP().mo)");pg.wait_for_timeout(200);pg.evaluate(f"V.rv.i=V.rv.ids.indexOf({pid});render()");pg.wait_for_timeout(300)
+  out('rev_cards',pg.evaluate("[...document.querySelectorAll('.icard')].map(c=>c.innerText.replace(/\\s+/g,' ')).filter(t=>/إضافي|الحالة/.test(t))"))
+  # combined report
+  pg.evaluate("goV({v:'all',am:'mg',op:{},dr:{},q:{t:'',st:'',mo:'2026-10'}})");pg.wait_for_timeout(500)
+  out('all_xi',pg.evaluate("[...document.querySelectorAll('.xitb tr')].map(r=>r.innerText.replace(/\\s+/g,' '))"))
+  out('all_btn',pg.evaluate("!!document.querySelector('[data-mrb]')"))
+  # monthly batch
+  pg.evaluate("()=>{window.shareFiles=async(F,m)=>{window._F=F.map(f=>[f.name,f.type,f.size>1000]);window._M=m}}")
+  pg.evaluate("goV({v:'month',op:{},dr:{},q:{t:'',st:'',mo:''}})");pg.wait_for_timeout(300);pg.click('[data-mrb]');pg.wait_for_timeout(300)
+  out('mrb',pg.evaluate("[V.v,document.querySelectorAll('[data-mrbp]').length,document.querySelector('[data-mrbgo]').innerText]"))
+  pg.click('[data-mrbf=both]');pg.wait_for_timeout(200);pg.uncheck(f"[data-mrbp='{pg.evaluate('DB.ph.find(p=>p.no==\"1533\").id')}']");pg.wait_for_timeout(200)
+  out('mrb2',pg.evaluate("[DB.cfg.mrbf,document.querySelector('[data-mrbgo]').innerText]"))
+  pg.click('[data-mrbgo]');pg.wait_for_timeout(25000)
+  out('files',pg.evaluate("window._F"));out('msg',pg.evaluate("window._M"))
+  pg.screenshot(path=W+'t25_mrb.png')
+  out('overflow',pg.evaluate("document.documentElement.scrollWidth"))
+  out('ERRS',E)
+  br.close()
