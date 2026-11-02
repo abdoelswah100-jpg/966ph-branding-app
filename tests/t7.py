@@ -27,7 +27,7 @@ with sync_playwright() as pw:
     res['menu_closed'] = pg.locator('.hmenu').count() == 0
     # add location via home card button
     pid = pg.evaluate("DB.ph.find(p=>p.no=='809').id")
-    pg.click(f'.pcard button[data-addloc="{pid}"]'); pg.wait_for_timeout(200)
+    pg.evaluate("document.querySelectorAll('#hl details.mg').forEach(d=>d.open=true)"); pg.click(f'.pcard button[data-addloc="{pid}"]'); pg.wait_for_timeout(200)
     res['after_addloc'] = pg.evaluate("[V.v,document.activeElement&&document.activeElement.id]")
     pg.fill('#cloc', 'hello'); pg.locator('#cloc').dispatch_event('change'); pg.wait_for_timeout(100)
     res['bad_loc'] = pg.evaluate("DB.ph.find(x=>x.id==V.p).loc||''")
@@ -44,7 +44,7 @@ with sync_playwright() as pw:
     # clicking location link on home card must not open pharmacy page
     pg.click('button[data-tab="home"]'); pg.wait_for_timeout(150)
     with ctx.expect_page() as np:
-        pg.click(f'.pcard[data-go="{pid}"] a.locb')
+        pg.evaluate("document.querySelectorAll('#hl details.mg').forEach(d=>d.open=true)"); pg.click(f'.pcard[data-go="{pid}"] a.locb')
     res['card_link'] = np.value.url; np.value.close(); pg.wait_for_timeout(100)
     res['view_after_card_link'] = pg.evaluate('V.v')
     pg.screenshot(path='s7/03_home.png')

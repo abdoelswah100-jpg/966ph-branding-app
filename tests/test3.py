@@ -31,7 +31,7 @@ with sync_playwright() as pw:
     pg.click('button[data-lth=""]'); pg.click('button[data-lfs="18"]'); res['fs'] = pg.evaluate('DB.cfg.fs'); pg.click('button[data-lfs="16"]')
     pg.click('button[data-tab="home"]')
     # pharmacy page
-    pg.click('.pcard[data-go] .pc-ln >> nth=0'); pg.wait_for_timeout(200); sh('05_ph')
+    pg.evaluate("document.querySelectorAll('#hl details.mg').forEach(d=>d.open=true)"); pg.click('.pcard[data-go] .pc-ln >> nth=0'); pg.wait_for_timeout(200); sh('05_ph')
     res['sbar'] = pg.locator('header .sbar').inner_text()
     pg.evaluate("V.op.dc=true;render()")  # open Die Cut (likely has rows or empty)
     sh('05b_ph_full', True)
