@@ -1,0 +1,27 @@
+# v2.8: visit tracking (mocked background geolocation + notifications)
+from playwright.sync_api import sync_playwright
+W='/home/claude/work/';APP='file://'+W+'new28.html';D=open(W+'bk1102/data.json',encoding='utf-8').read()
+def out(k,v):print(k,'=>',v)
+with sync_playwright() as pw:
+  br=pw.chromium.launch(executable_path='/opt/pw-browsers/chromium-1194/chrome-linux/chrome');pg=br.new_page(viewport={'width':400,'height':860});E=[];pg.on('pageerror',lambda e:E.append(str(e)));pg.on('dialog',lambda x:x.accept())
+  pg.add_init_script("""(()=>{const T0=new Date();T0.setHours(9,0,0,0);let off=0;const D0=Date;class F extends D0{constructor(...a){super(...(a.length?a:[T0.getTime()+off]))}static now(){return T0.getTime()+off}};window.Date=F;window._adv=m=>{off+=m*6e4};
+   window._sch=[];window._cb=null;window.Capacitor={isNativePlatform:()=>true,Plugins:{LocalNotifications:{createChannel:async()=>{},addListener:()=>{},checkPermissions:async()=>({display:'granted'}),requestPermissions:async()=>({display:'granted'}),getPending:async()=>({notifications:[]}),cancel:async()=>{},schedule:async o=>{window._sch=window._sch.concat(o.notifications)}},
+   BackgroundGeolocation:{addWatcher:async(o,cb)=>{window._cb=cb;window._wo=o;return 'w1'},removeWatcher:async()=>{window._cb=null;window._rm=1}}}}})()""")
+  pg.goto(APP);pg.wait_for_timeout(300);pg.evaluate("d=>{localStorage.clear();localStorage.setItem('ads',d)}",D);pg.reload();pg.wait_for_timeout(4500)
+  pg.evaluate("(()=>{const td=TD();['843','836'].forEach((n,i)=>{const p=DB.ph.find(p=>p.no==n);p.st='جاري';p.ds=td;p.de=new Date(+new Date(td)+2*864e5).toISOString().slice(0,10);p.locc=[24.70+i*0.05,46.70];p.locs=p.loc});sv();goV({v:'home',op:{},dr:{},q:{t:'',st:'',mo:''}})})()");pg.wait_for_timeout(400)
+  out('ask',pg.evaluate("[...document.querySelectorAll('.vask .vrow')].map(r=>r.innerText.replace(/\\s+/g,' '))"))
+  pg.select_option("[data-vk='%s']"%pg.evaluate("DB.ph.find(p=>p.no=='836').id"),'no')
+  pg.click('[data-vgo]');pg.wait_for_timeout(500)
+  out('plan',pg.evaluate("[vActive().map(p=>p.no),!!window._cb,window._wo&&window._wo.backgroundTitle,vAskL().length,!!document.querySelector('.vask')]"))
+  pg.evaluate("window._cb({latitude:24.7003,longitude:46.7001})");pg.evaluate("_adv(12)");pg.evaluate("window._cb({latitude:24.7004,longitude:46.7002})")
+  out('arrived',pg.evaluate("(p=>[p.vst,DB.cfg.vst[p.id]&&!!DB.cfg.vst[p.id].arr])(DB.ph.find(p=>p.no=='843'))"))
+  pg.evaluate("_adv(5)");pg.evaluate("window._cb({latitude:24.72,longitude:46.70})");pg.wait_for_timeout(300)
+  out('left',pg.evaluate("(p=>[p.vst.map(v=>[!!v.in,!!v.out]),nqLines(p,'x').length,window._sch.filter(n=>/مشيت/.test(n.title)).map(n=>[n.title,n.body,n.extra])])(DB.ph.find(p=>p.no=='843'))"))
+  n0=pg.evaluate("window._sch.length");pg.evaluate("window._cb({latitude:24.7003,longitude:46.7001})");pg.evaluate("_adv(3)");pg.evaluate("window._cb({latitude:24.72,longitude:46.70})")
+  out('short',pg.evaluate(f"[window._sch.length-{n0},DB.ph.find(p=>p.no=='843').vst.length]"))
+  pg.evaluate("goV({v:'ph',p:DB.ph.find(p=>p.no=='843').id,op:{},dr:{},q:V.q})");pg.wait_for_timeout(300);out('vst_html',pg.evaluate("(e=>e?e.innerText:null)(document.querySelector('.vst'))"))
+  pg.evaluate("goV({v:'ntf',op:{},dr:{},q:V.q})");pg.wait_for_timeout(300);out('cfg',pg.evaluate("[...document.querySelectorAll('.wcard')].find(w=>/متابعة الزيارات/.test(w.innerText)).innerText.split('\\n').slice(0,6)"))
+  out('morning',pg.evaluate("(()=>{const N=ntfPlan().filter(n=>/عندك/.test(n.title));return [N.length,N[0]&&new Date(N[0].schedule.at).getHours()+':'+new Date(N[0].schedule.at).getMinutes()]})()"))
+  pg.evaluate("_adv(14*60)");pg.evaluate("window._cb&&window._cb({latitude:24.7,longitude:46.7})");pg.wait_for_timeout(200);out('late_stop',pg.evaluate("[!!window._rm,VW]"))
+  out('ERRS',E)
+  br.close()
