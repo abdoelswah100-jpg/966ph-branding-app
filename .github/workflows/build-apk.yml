@@ -46,7 +46,7 @@ jobs:
       - name: Google Drive sign-in (DriveAuth plugin)
         run: |
           J=android/app/src/main/java/com/motors966/phbranding
-          cp android-src/DriveAuthPlugin.java $J/
+          cp android-src/DriveAuthPlugin.java android-src/PdfToolsPlugin.java $J/
           cat > $J/MainActivity.java <<'JEOF'
           package com.motors966.phbranding;
 
@@ -57,6 +57,7 @@ jobs:
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   registerPlugin(DriveAuthPlugin.class);
+                  registerPlugin(PdfToolsPlugin.class);
                   super.onCreate(savedInstanceState);
               }
           }
@@ -64,6 +65,9 @@ jobs:
           sed -i 's/^          //' $J/MainActivity.java
           sed -i '0,/^dependencies {/s//dependencies {\n    implementation "com.google.android.gms:play-services-auth:21.2.0"/' android/app/build.gradle
           cat $J/MainActivity.java
+          X=android/app/src/main/res/xml/file_paths.xml; cat $X || true
+          grep -q "cache-path" $X || sed -i 's#</paths>#    <cache-path name="cache966" path="." />\n</paths>#' $X
+          cat $X; grep -n "fileprovider" android/app/src/main/AndroidManifest.xml
           grep -n "play-services-auth" android/app/build.gradle
 
       - name: Icons and splash screens
