@@ -23,6 +23,6 @@ jobs:
             ls package/android/src/main/java/ee/forgr/capacitor/social/login/
             grep -n "scopes\|CANNOT\|REQUEST_AUTHORIZE\|accessToken\|handleGoogleLoginIntent\|ModifiedMainActivity" -r package/android/src/main/java | head -60
             grep -n "implementation\|minSdk\|compileSdk" package/android/build.gradle
-          } > probe.txt 2>&1
-          gh release delete probe -y --cleanup-tag -R ${{ github.repository }} 2>/dev/null || true
-          gh release create probe probe.txt -R ${{ github.repository }} --title probe --notes probe --prerelease --target probe
+          } > /tmp/probe.txt 2>&1; cd $GITHUB_WORKSPACE 2>/dev/null || cd ~; cat /tmp/probe.txt
+          true
+          true
