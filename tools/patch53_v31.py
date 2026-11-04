@@ -27,7 +27,7 @@ rep("document.addEventListener('input',e=>{const x=e.target;\n if(x.dataset.t=='
 # ---- Acrylic letters: editable max sentence width (default layout width − 10)
 rep("Object.assign(num('tw','عرض التخطيط (سم) — بيتاخد من Wall Sticker'),{opt:1}),", "Object.assign(num('tw','عرض التخطيط (سم) — بيتاخد من Wall Sticker'),{opt:1}),Object.assign(num('mx','أقصى عرض لجملة الحروف (سم)'),{opt:1,hint:'تلقائي: عرض التخطيط − 10. لو التخطيط شامل شرايح العمدان يمين ويسار، عدّله.'}),")
 rep("const alMax=r=>+r.tw>10?Math.round((+r.tw-10)*10)/10:0;", "const alMax=r=>r&&r.mx!==''&&r.mx!=null&&+r.mx>0?+r.mx:+r.tw>10?Math.round((+r.tw-10)*10)/10:0;")
-rep("function alPrep(d){", "function alPrep(d){if(d.mx===undefined||d.mx===''||d._mxa){const v=+d.tw>10?Math.round((+d.tw-10)*10)/10:'';if(v!==''){d.mx=v;d._mxa=1}else if(d._mxa){d.mx='';delete d._mxa}}")
+rep("if(d._twa){d.tw='';}}const c=ratW(d.sec,d.lh);", "if(d._twa){d.tw='';}}if(d.mx===undefined||d.mx===''||d._mxa){const v=+d.tw>10?Math.round((+d.tw-10)*10)/10:'';if(v!==''){d.mx=v;d._mxa=1}else{d.mx='';delete d._mxa}}const c=ratW(d.sec,d.lh);")
 rep("<div class=\"almxs\">⚠ عرض جملة حروف ${esc(r.sec)} لا يزيد عن <b>${alMax(r)} سم</b> (عرض التخطيط ${esc(r.tw)} − 10)</div>", "<div class=\"almxs\">⚠ عرض جملة حروف ${esc(r.sec)} لا يزيد عن <b>${alMax(r)} سم</b> (${r.mx!==''&&r.mx!=null&&+r.mx>0&&+r.mx!=Math.round((+r.tw-10)*10)/10?'متعدّل يدوي':'عرض التخطيط '+esc(r.tw)+' − 10'})</div>")
 rep("عرض جملة الحروف ${r.w} أكبر من (عرض التخطيط ${r.tw} − 10) = ${alMax(r)} سم", "عرض جملة الحروف ${r.w} أكبر من الأقصى ${alMax(r)} سم")
 JS = r"""// ---------- v3.1: layout heights filled automatically ----------
