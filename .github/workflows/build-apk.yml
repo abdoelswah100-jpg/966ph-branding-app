@@ -43,6 +43,29 @@ jobs:
       - name: Add Android platform
         run: npx cap add android
 
+      - name: Google Drive sign-in (DriveAuth plugin)
+        run: |
+          J=android/app/src/main/java/com/motors966/phbranding
+          cp android-src/DriveAuthPlugin.java $J/
+          cat > $J/MainActivity.java <<'JEOF'
+          package com.motors966.phbranding;
+
+          import android.os.Bundle;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onCreate(Bundle savedInstanceState) {
+                  registerPlugin(DriveAuthPlugin.class);
+                  super.onCreate(savedInstanceState);
+              }
+          }
+          JEOF
+          sed -i 's/^          //' $J/MainActivity.java
+          sed -i '0,/^dependencies {/s//dependencies {\n    implementation "com.google.android.gms:play-services-auth:21.2.0"/' android/app/build.gradle
+          cat $J/MainActivity.java
+          grep -n "play-services-auth" android/app/build.gradle
+
       - name: Icons and splash screens
         run: |
           BG="#0A1F7A"; if [ "${{ github.ref_name }}" != "main" ]; then BG="#F28C05"; fi
