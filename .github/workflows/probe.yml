@@ -13,16 +13,12 @@ jobs:
       - env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           set -x
-          { npm view @capgo/capacitor-social-login versions --json | tr -d '\n '
-            echo; for v in 6 7; do npm view "@capgo/capacitor-social-login@^$v" version peerDependencies --json | tail -30; done
-            npm view @capgo/capacitor-social-login dist-tags --json
+          { mkdir x && cd x && npm pack "@capgo/capacitor-social-login@6.0.1" && tar xzf *.tgz
+            cat package/dist/esm/definitions.d.ts
+            cat package/android/src/main/java/ee/forgr/capacitor/social/login/SocialLoginPlugin.java
+            sed -n '60,700p' package/android/src/main/java/ee/forgr/capacitor/social/login/GoogleProvider.java
+            cat package/android/src/main/AndroidManifest.xml
             npm view @capacitor/network@^6 version
-            mkdir x && cd x && npm pack "@capgo/capacitor-social-login@^6" && tar xzf *.tgz
-            cat package/package.json | head -40
-            grep -n "scopes\|accessToken\|CANNOT\|interface\|MODIFIED\|IHaveModified" -r package/dist/esm/definitions.d.ts | head -80
-            ls package/android/src/main/java/ee/forgr/capacitor/social/login/
-            grep -n "scopes\|CANNOT\|REQUEST_AUTHORIZE\|accessToken\|handleGoogleLoginIntent\|ModifiedMainActivity" -r package/android/src/main/java | head -60
-            grep -n "implementation\|minSdk\|compileSdk" package/android/build.gradle
           } > /tmp/probe.txt 2>&1; cd $GITHUB_WORKSPACE 2>/dev/null || cd ~; cat /tmp/probe.txt
           true
           true
