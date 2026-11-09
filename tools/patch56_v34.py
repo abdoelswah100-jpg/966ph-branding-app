@@ -94,6 +94,191 @@ CSS.append(".ckpi .cnpk{grid-column:1/-1;display:grid;gap:2px;text-align:center;
 EN.update({'بدون فاتورة ورقية':'Without a paper invoice','اضغط لعرضهم بس':'Tap to show only these','✓ معروضين بس · اعرض الكل':'✓ Only these shown · show all','مشاركة…':'Share…','حفظ…':'Save…','Excel العهدة':'Custody Excel','PDF العهدة':'Custody PDF','فواتير بدون ورقي بس':'Only invoices without paper','صور كل الفواتير PDF':'All invoice photos PDF','إلغاء':'Cancel','فواتير بدون ورقي':'Invoices without paper','عدد الفواتير بدون فاتورة ورقية:':'Invoices without a paper invoice:','بدون صورة':'No photo'})
 
 # =====================================================================
+# 2. custody handover (تسليم العهدة): save files, stamp, lock, next month with the remaining; reopen / deliver again
+# =====================================================================
+rep("<div class=\"cshare c2b\"><button class=\"pr\" data-cmenu=\"share\">${ic('share')}مشاركة…</button><button data-cmenu=\"save\">${ic('download')}حفظ…</button></div>",
+    "<div class=\"cshare c2b\"><button class=\"pr\" data-cmenu=\"share\">${ic('share')}مشاركة…</button><button data-cmenu=\"save\">${ic('download')}حفظ…</button></div>${cDlBtn(M)}")
+rep(" <div class=\"cbtn\"><button class=\"pr\" data-cscan=\"1\">${ic('cam')}امسح QR بالكاميرا</button>",
+    " ${cDlStamp(M)}<div class=\"cbtn\"${cLk(M)?' hidden':''}><button class=\"pr\" data-cscan=\"1\">${ic('cam')}امسح QR بالكاميرا</button>")
+rep("<div class=\"cnpline\">عدد الفواتير بدون فاتورة ورقية: <b>${L.filter(cNp).length}</b></div>",
+    "<div class=\"cnpline\">عدد الفواتير بدون فاتورة ورقية: <b>${L.filter(cNp).length}</b>${M.dl?` · تاريخ التسليم: <b>${cDd(M.dl.at)}</b>`:''}</div>")
+rep("cell(tot+1,0,'عدد الفواتير بدون فاتورة ورقية: '+L.filter(cNp).length,",
+    "cell(tot+1,0,'عدد الفواتير بدون فاتورة ورقية: '+L.filter(cNp).length+(M.dl?'     ·     تاريخ التسليم: '+cDd(M.dl.at):''),")
+JS.append(r"""// ---------- v3.4: custody handover ----------
+const cDd=iso=>String(iso||'').slice(0,10).split('-').reverse().join('-');
+const cLk=M=>!!(M&&M.dl&&!M.reo);
+const cSig=M=>JSON.stringify((M.items||[]).map(x=>[x.id,x.dt,x.tm,x.desc,x.comp,x.kind,x.amt,x.note,x.car,x.ph,x.ref,x.qt,(x.imgs||[]).length]).concat([M.open]));
+function cDlStamp(M){if(!M||!M.dl)return '';const ch=M.dl.sig&&cSig(M)!=M.dl.sig;
+ return `<div class="cdlv${M.reo?' re':''}"><b>✓ تم التسليم ${cDd(M.dl.at)}</b>${M.reo?`<small>مفتوحة للتعديل${ch?' · اتعدّلت بعد التسليم':''}. لما تخلص اضغط «إعادة التسليم».</small>`:'<small>العهدة دي مقفولة. لو المحاسب طلب تعديل افتحها.</small>'}${M.reo?'':'<button data-cdreo="1">'+ic('edit')+'فتح للتعديل</button>'}</div>`}
+function cDlBtn(M){if(!M)return '';if(!M.dl)return `<button class="pr cdlb" data-cdl="1">✅ تسليم العهدة</button>`;if(M.reo)return `<button class="pr cdlb" data-cdl="re">✅ إعادة التسليم</button>`;return ''}
+function cDlOpen(re){cShClose();const C=CU(),k=C.cur,M=C.m[k],L=M.items.filter(x=>!x.qt),r=cRem(M),nk=cNext(k),sg=r>C.cfg.min?r:C.cfg.base,np=L.filter(cNp),miss=L.map((x,i)=>({x,i:i+1})).filter(y=>cNp(y.x)&&!(y.x.imgs||[]).length).map(y=>'م '+y.i),Q=cQts().length,ex=C.m[nk]&&C.m[nk].items.length;
+ const el=document.createElement('div');el.className='csh';el.dataset.re=re?'1':'';
+ el.innerHTML=`<div class="cshb"><b>${re?'إعادة تسليم':'تسليم'} عهدة شهر ${cMoLab(k)}</b>
+ <div class="cdls"><span>عدد الفواتير <b>${L.length}</b></span><span>الإجمالي <b class="c-exp">${f2(cTot(M))}</b></span><span>المتبقي <b class="c-rem">${f2(r)}</b></span><span>بدون فاتورة ورقية <b>${np.length}</b></span></div>
+ ${miss.length?`<div class="alr"><small>⚠ فواتير بدون ورقي ومفيهاش صورة ولا PDF: ${miss.join('، ')}</small></div>`:''}${Q?`<div class="alr"><small>⚠ فيه ${Q} عرض سعر مستني فاتورة.</small></div>`:''}
+ <small>هيتحفظ: Excel العهدة + PDF العهدة + فواتير بدون ورقي (${np.length})، ومكتوب فيهم تاريخ التسليم.</small>
+ ${re?(M.dl&&M.dl.nx&&C.m[M.dl.nx]?`<small>لو المتبقي اتغيّر هسألك تحدّث رصيد بداية ${cMoLab(M.dl.nx)}.</small>`:''):`<div class="cdln"><b>العهدة الجديدة: شهر ${cMoLab(nk)}</b>${ex?`<small>⚠ شهر ${cMoLab(nk)} فيه فواتير. هيتغيّر رصيد بدايته بس.</small>`:''}
+ <label class="chk"><input type="radio" name="cdlo" value="${r}"${sg==r?' checked':''}> ابدأ بالمتبقي <b>${f2(r)}</b></label><label class="chk"><input type="radio" name="cdlo" value="${C.cfg.base}"${sg==r?'':' checked'}> ابدأ بالعهدة كاملة <b>${f2(C.cfg.base)}</b></label><label class="chk"><input type="radio" name="cdlo" value="v"> مبلغ تاني <input type="number" inputmode="decimal" id="cdlv" style="max-width:130px"></label>
+ <small>${r>C.cfg.min?`المتبقي أكتر من ${f2(C.cfg.min)}، فالاقتراح يبدأ بالمتبقي.`:`المتبقي أقل من ${f2(C.cfg.min)}، فالاقتراح يبدأ بالعهدة كاملة.`}</small></div>`}
+ <div class="cshr c3"><button class="pr" data-cdgo="share">${re?'إعادة التسليم':'تسليم'} ومشاركة</button><button class="pr" data-cdgo="save">${re?'إعادة التسليم':'تسليم'} وحفظ</button><button data-cshx="1">إلغاء</button></div></div>`;document.body.appendChild(el)}
+async function cFiles(mode,kind,ids,k){const M=CU().m[k],L=M.items.filter(x=>!x.qt),S=L.map((x,i)=>({x,i:i+1})).filter(y=>ids.has(y.x.id));
+ const F=[],ttl=(kind=='all'?'عهدة شهر ':'فواتير بدون فاتورة ورقية — شهر ')+cMoLab(k),t=toast('جاري تجهيز الملفات…');
+ try{if(kind=='all'){const bl=custXlsx(k);F.push(new File([bl],cName(k,'xlsx'),{type:bl.type}));F.push(new File([await buildPdf(custPdfEl(k),'كشف مصروفات العهدة — شهر '+cMoLab(k))],cName(k,'pdf'),{type:'application/pdf'}))}
+  if(S.length){const o=await cAppEl(k,new Set(S.map(y=>y.x.id)));if(o.n)F.push(new File([await buildPdf(o.el,'فواتير بدون فاتورة ورقية — شهر '+cMoLab(k))],cName(k,'pdf').replace(/^عهدة/,'فواتير بدون ورقي عهدة'),{type:'application/pdf'}));
+   for(const y of o.pdfs){const b=await idbGet(y.key);if(b)F.push(new File([b],cSafe('فاتورة م '+y.i+(y.j?'-'+y.j:'')+' - '+y.x.desc+' - '+y.x.comp)+'.pdf',{type:'application/pdf'}))}}}
+ catch(e){console.error(e)}finally{t.remove()}
+ if(!F.length){alert('ما قدرتش أجهز الملفات');return 0}if(mode=='share'){await shareFiles(F,ttl);return F.length}
+ for(const f of F){if(CAPN())await nativeSave(f.name,f,f.type,false);else{dl(f.name,f,f.type);await new Promise(r=>setTimeout(r,350))}}toastT('✓ اتحفظ '+F.length+' ملف');return F.length}
+async function cDlGo(mode){const sh=document.querySelector('.csh'),re=sh&&sh.dataset.re=='1',C=CU(),k=C.cur,M=C.m[k];if(!M)return;
+ let v=null;if(!re){const o=document.querySelector('input[name=cdlo]:checked');v=o?(o.value=='v'?parseFloat(($('#cdlv')||{}).value):+o.value):NaN;if(!(v>=0))return alert('اكتب مبلغ بداية العهدة الجديدة')}
+ if(!cQtOk())return;cShClose();const r0=M.dl?M.dl.rem:null;
+ M.dl=Object.assign(M.dl||{},{at:nowIso(),rem:cRem(M),tot:cTot(M)});delete M.reo;M.dl.sig=cSig(M);M.xat=nowIso();sv();
+ const ids=new Set(M.items.filter(x=>!x.qt&&cNp(x)).map(x=>x.id));await cFiles(mode,'all',ids,k);
+ if(!re){const nk=cNext(k);C.m[nk]=C.m[nk]||{items:[]};C.m[nk].open=Math.round(v*100)/100;C.m[nk].why=Math.abs(v-cRem(M))<.005?'المتبقي من شهر '+cMoLab(k):'';M.dl.nx=nk;M.dl.ov=C.m[nk].open;C.cur=nk;V.cnew=false;V.cnpf=false;sv();render();toastT('✓ اتسلمت عهدة '+cMoLab(k)+' وبدأت عهدة '+cMoLab(nk));return}
+ const nx=M.dl.nx,N=nx&&C.m[nx],r=cRem(M);
+ if(N&&r0!=null&&Math.abs(r-r0)>.004&&Math.abs((+N.open||0)-(+M.dl.ov||0))<.005&&Math.abs((+M.dl.ov||0)-r0)<.005&&confirm(`رصيد بداية ${cMoLab(nx)} كان ${f2(N.open)} (المتبقي القديم)، والمتبقي بعد التعديل بقى ${f2(r)}. تحدّثه؟`)){N.open=Math.round(r*100)/100;M.dl.ov=N.open}
+ sv();render();toastT('✓ اتعادت تسليم عهدة '+cMoLab(k))}
+function v34DlClick(d,b){
+ if(d.cdl){cDlOpen(d.cdl=='re');return 1}
+ if(d.cdgo){cDlGo(d.cdgo);return 1}
+ if(d.cdreo){const M=cMo();if(confirm('تفتح عهدة شهر '+cMoLab(CU().cur)+' للتعديل؟ بعد ما تخلص التعديلات اضغط «إعادة التسليم».')){M.reo=1;sv();render()}return 1}
+ if(V.v=='cust'&&cLk(cMo())&&(d.cscan||d.cman||d.ced||(d.cnew&&d.cnew!=='0')||(d.pick&&/^c(imgs|json)$/.test(d.pick)))){toastT('🔒 عهدة '+cMoLab(CU().cur)+' اتسلمت. اضغط «فتح للتعديل» الأول');return 1}
+ return 0}
+""")
+rep("if(usrClick(d,b)||v34CustClick(d,b)||", "if(usrClick(d,b)||v34DlClick(d,b)||v34CustClick(d,b)||")
+CSS.append(".cdlv{display:grid;gap:4px;background:#E3F4E8;border:1px solid #9ED3AE;color:#145A2E;border-radius:12px;padding:10px;margin:8px 0}.cdlv b{font-size:15px}.cdlv.re{background:#FFF4D6;border-color:#E9C46A;color:#6B4C00}.cdlv button{justify-self:start}"
+           ".cdlb{width:100%;margin-top:8px;background:#1E7B45!important;border-color:#1E7B45!important;color:#fff!important}"
+           ".cdls{display:grid;grid-template-columns:1fr 1fr;gap:6px}.cdls span{background:var(--c2);border:1px solid var(--ln);border-radius:10px;padding:8px;display:grid;text-align:center;font-size:12px;color:var(--mu);font-weight:700}.cdls b{font-size:16px;color:var(--tx)}"
+           ".cdln{display:grid;gap:6px;border:1px dashed var(--gold);border-radius:12px;padding:10px}.cdln label.chk{display:flex;align-items:center;gap:8px}.cshr.c3{grid-template-columns:1fr 1fr 1fr}")
+EN.update({'✅ تسليم العهدة':'✅ Hand over custody','✅ إعادة التسليم':'✅ Hand over again','فتح للتعديل':'Open for editing','تم التسليم':'Handed over','تاريخ التسليم:':'Handover date:'})
+
+# =====================================================================
+# 3. bottom bar: «الصيانة» instead of «النسخ» (moved to the menu); maintenance tab; home = branding pharmacies only
+# =====================================================================
+rep("['revhub','مراجعة','eye','t-rev'],['bk','النسخ','db','']];", "['revhub','مراجعة','eye','t-rev'],['mnt','الصيانة','wrench','']];")
+rep("mnt:'',med:''", "mnt:'mnt',med:'mnt'")
+rep("bk:'bk',sync:'bk'", "bk:'',sync:''")
+rep("lang:'',imp:'bk'", "lang:'',imp:''")
+rep("atb:'bk'}", "atb:''}")
+rep("const MENU=[['all','التقارير','layers'],", "const MENU=[['all','التقارير','layers'],['bk','النسخ والاستيراد','db'],")
+rep("['cust','العهدة','sheet'],['mnt','الصيانة','check'],", "['cust','العهدة','sheet'],")
+rep("${MENU.map(m=>`<button data-mgo=\"${m[0]}\">${ic(m[2])}${m[1]}</button>`).join('')}",
+    "${MENU.map(m=>`<button data-mgo=\"${m[0]}\">${ic(m[2])}${m[1]}${m[0]=='bk'&&DB.cfg.ue?`<i class=\"mnb\">${DB.cfg.ue}</i>`:''}</button>`).join('')}")
+rep("<button class=\"hmb\" data-menu=\"1\" aria-label=\"القائمة\">${ic('menu')}</button>", "<button class=\"hmb\" data-menu=\"1\" aria-label=\"القائمة\">${ic('menu')}${DB&&DB.cfg&&DB.cfg.ue?'<i class=\"hmnb\"></i>':''}</button>")
+rep("if(V.v=='bk'){a.innerHTML=hdr('','النسخ')", "if(V.v=='bk'){a.innerHTML=hdr(backBtn(),'النسخ')")
+rep("if(V.v=='mnt'){a.innerHTML=hdr(backBtn(),'الصيانة')", "if(V.v=='mnt'){a.innerHTML=hdr('','🔧 الصيانة')")
+rep("function mntHtml(){const C=MU()", "function mntHtml0(){const C=MU()")
+# home: branding pharmacies only (maintenance ones live in the maintenance tab)
+rep(" const L=DB.ph.filter(p=>(!t||[p.no,p.rg,p.ct,p.name].join(' ').toLowerCase().includes(t))&&(!q.st||p.st==q.st)&&(!q.mo||p.mo==q.mo)).sort(pSort);\n const hc=$('#hcnt');if(hc)hc.textContent=`${DB.ph.length} صيدلية مسجلة · ${L.length} معروضة في البحث`;",
+    " const L=DB.ph.filter(p=>isBr(p)&&(!t||[p.no,p.rg,p.ct,p.name].join(' ').toLowerCase().includes(t))&&(!q.st||p.st==q.st)&&(!q.mo||p.mo==q.mo)).sort(pSort);\n const hc=$('#hcnt');if(hc)hc.textContent=`${DB.ph.filter(isBr).length} صيدلية دعاية${t||q.st||q.mo?' · '+L.length+' معروضة':''}${DB.ph.some(isMnt)?' · صيدليات الصيانة في تاب «الصيانة»':''}`;")
+# compact home card + sync alert as a small bar that opens
+rep("function homeHtml(){const n=DB.ph.length;return vAskHtml()+`<div class=\"hcard\"><div class=\"hc-top\"><span class=\"hc-ic\">${ic('bld')}</span><div><h2>إدارة ومتابعة الصيدليات</h2><small id=\"hcnt\">${n} صيدلية مسجلة · ${n} معروضة في البحث</small></div></div><button class=\"hc-calc\" data-tab=\"calc\">${ic('calc')}حاسبة الأمتار الذكية</button><button class=\"hc-calc\" data-rtgo=\"\">${ic('pin')}جدول السير (من أرقام الصيدليات)</button><div class=\"hc-sep\"></div><button class=\"hc-add\" data-newp=\"1\">${ic('add')}إضافة صيدلية جديدة</button><p class=\"hc-hint\">اضغط هنا لإدراج صيدلية جديدة وحفظ بياناتها مباشرة</p></div>${[bkBanner(),syncBanner()].filter(x=>x.startsWith('<div class=\"alr\"')).join('')}",
+    "function homeHtml(){const n=DB.ph.filter(isBr).length;return vAskHtml()+`<div class=\"hcard hc2\"><div class=\"hc-row\"><button class=\"hc-add\" data-newp=\"1\">${ic('add')}صيدلية جديدة</button><button class=\"hc-ib\" data-tab=\"calc\">${ic('calc')}<i>الحاسبة</i></button><button class=\"hc-ib\" data-rtgo=\"\">${ic('pin')}<i>جدول السير</i></button></div><small id=\"hcnt\">${n} صيدلية دعاية</small></div>${[bkBanner()].filter(x=>x.startsWith('<div class=\"alr\"')).join('')}${syncChip()}")
+JS.append(r"""// ---------- v3.4: maintenance tab, compact home, sync bar ----------
+ICN.wrench='<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>';
+function syncChip(){const h=syncBanner();if(!h.startsWith('<div class="alr"'))return '';const n=pendingN();return `<details class="schip" data-id="__sch"${V.op.__sch?' open':''}><summary>⚠ المزامنة: ${n?n+' صيدلية معدلة لسه ما اتصدّرتش':'آخر استيراد قديم'}<small>التفاصيل ›</small></summary>${h}</details>`}
+function mntPhHtml(){const t=String(V.mpq||'').trim().toLowerCase(),A=DB.ph.filter(isMnt),L=A.filter(p=>!t||[p.no,p.rg,p.ct,p.name].join(' ').toLowerCase().includes(t)).sort(pSort),cur=MN(),g={};L.forEach(p=>{(g[p.mo||'—']=g[p.mo||'—']||[]).push(p)});const ks=Object.keys(g).sort().reverse();
+ return `<div class="hcard hc2"><div class="hc-row"><button class="hc-add" data-newpm="1">${ic('add')}صيدلية صيانة</button><button class="hc-ib" data-madd="1">${ic('wrench')}<i>صيانة جديدة</i></button></div><small>${A.length} صيدلية صيانة</small></div>
+ <details class="mg lst" data-id="__mph"${V.op.__mph||t?' open':''}><summary><span>🔧 صيدليات الصيانة</span><i>${A.length}</i></summary><div class="mgb"><input class="sf" id="mpq" placeholder="🔍 بحث برقم الصيدلية أو المنطقة" value="${esc(V.mpq||'')}">${ks.map(k=>{const a=g[k],open=!!t||!!V.op['mm_'+k];return `<details class="mg" data-id="mm_${k}"${open?' open':''}><summary><span>${k==cur?'الشهر الحالي':'شهر'} ${k}</span><i>${a.length}</i></summary><div class="mgb"><small>مكتملة ${a.filter(p=>p.st=='مكتملة').length} من ${a.length}</small>${a.map(pCard).join('')}</div></details>`}).join('')||'<p class="em">'+(t?'مفيش نتائج.':'لسه مفيش صيدليات صيانة. اضغط «صيدلية صيانة».')+'</p>'}</div></details>`}
+function mntHtml(){const C=MU(),n=mList(C.cur).length;return mntPhHtml()+`<details class="mg lst" data-id="__mrep"${V.op.__mrep||V.mqf?' open':''}><summary><span>📋 كشف الصيانات · ${mQLab(C.cur)}</span><i>${n}</i></summary><div class="mgb">${mntHtml0()}</div></details>`}
+function v34Click(d,b){
+ if(d.newpm){goV({v:'add',op:{},dr:{},q:V.q});setTimeout(()=>{const m=$('#pmod');if(m&&[...m.options].some(o=>o.value=='صيانة')){m.value='صيانة';m.dispatchEvent(new Event('change',{bubbles:true}))}const x=$('#pno');if(x)x.focus()},60);return 1}
+ return 0}
+function v34Change(x){
+ if(x.id=='mpq'){V.mpq=x.value;render();const i=$('#mpq');if(i){i.focus();i.setSelectionRange(i.value.length,i.value.length)}return 1}
+ return 0}
+""")
+rep("if(tr&&!b){custClick({ced:tr.dataset.ced});return}", "if(tr&&!b){if(!v34DlClick({ced:tr.dataset.ced},tr))custClick({ced:tr.dataset.ced});return}")
+rep("v33Click(d,b)||rlClick(d)", "v33Click(d,b)||v34Click(d,b)||rlClick(d)")
+rep("v33Change(x)||rlChange(x)", "v33Change(x)||v34Change(x)||rlChange(x)")
+CSS.append(".hc2{padding:12px;gap:8px}.hc-row{display:flex;gap:8px;align-items:stretch}.hc-row .hc-add{flex:1;padding:14px;font-size:17px}.hc-ib{flex:none;width:76px;flex-direction:column;gap:2px;justify-content:center;background:#0A1A32;color:#FFC93C;border:1px solid rgba(201,162,39,.65);border-radius:14px;padding:6px;font-weight:800;font-size:11.5px}.hc-ib svg{width:22px;height:22px}.hc-ib i{font-style:normal}.hc2>small{color:rgba(255,255,255,.82);font-size:12.5px}"
+           ".schip{margin:8px 0;border:1px solid #F3B5B5;background:#FDECEC;border-radius:12px}.schip>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;color:#8B0000;font-weight:800;font-size:13px}.schip>summary::-webkit-details-marker{display:none}.schip>summary small{font-weight:700;opacity:.8;white-space:nowrap}.schip>.alr{margin:0 8px 8px}"
+           ".mg.lst>summary{font-size:16px}.hmb{position:relative}.hmnb{position:absolute;top:6px;inset-inline-end:6px;width:10px;height:10px;border-radius:50%;background:#C7313B;border:2px solid var(--nav)}.mnb{font-style:normal;background:#C7313B;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;margin-inline-start:auto}")
+EN.update({'الصيانة':'Maintenance','صيدلية جديدة':'New pharmacy','الحاسبة':'Calculator','جدول السير':'Route','صيدلية صيانة':'Maintenance pharmacy','صيانة جديدة':'New maintenance','🔧 صيدليات الصيانة':'🔧 Maintenance pharmacies','النسخ والاستيراد':'Backup and import','صيدلية دعاية':'branding pharmacies','التفاصيل ›':'Details ›'})
+
+# =====================================================================
+# 4. pharmacy screen: empty types folded, tools folded; execution cards; warehouse header
+# =====================================================================
+rep("${TY(p).map(t=>card(t,p)).join('')}<button class=\"pr\" data-sum=\"1\">عرض الملخص / التقرير</button><button data-qe=\"0\">⚡ إدخال سريع (نوع دعاية في كل شاشة)</button><button data-ckv=\"1\">Checklist الاستلام</button><button data-save=\"1\">حفظ ملف الصيدلية</button><button data-cp=\"1\">نسخ الصيدلية</button><button data-tps=\"1\">حفظ كقالب</button>${tplUI()}</main>`",
+    "${phCards(p)}<button class=\"pr\" data-sum=\"1\">عرض الملخص / التقرير</button><button data-qe=\"0\">⚡ إدخال سريع (نوع دعاية في كل شاشة)</button><details class=\"pinfo ptl\" data-id=\"__ptl\"${V.op.__ptl?' open':''}><summary>⋯ أدوات الصيدلية <small>Checklist · حفظ · نسخ · قالب</small></summary><div class=\"fm\"><button data-ckv=\"1\">Checklist الاستلام</button><button data-save=\"1\">حفظ ملف الصيدلية</button><button data-cp=\"1\">نسخ الصيدلية</button><button data-tps=\"1\">حفظ كقالب</button>${tplUI()}</div></details></main>`")
+JS.append(r"""// ---------- v3.4: pharmacy screen — types with items first, the empty ones folded ----------
+function phCards(p){const A=TY(p),fo=V.fo||{},F=A.filter(t=>t.auto||(p.rows[t.id]||[]).length||V.op[t.id]||fo[t.id]||(V.dr&&V.dr[t.id]&&V.ed&&String(V.ed).startsWith(t.id+':'))),E=A.filter(t=>!F.includes(t));
+ return F.map(t=>card(t,p)).join('')+(E.length?`<details class="pinfo pemp" data-id="__pem"${V.op.__pem?' open':''}><summary>${ic('add')} باقي الأنواع (${E.length})<small>${E.map(t=>esc(t.n)).join(' · ')}</small></summary>${E.map(t=>card(t,p)).join('')}</details>`:'')}
+""")
+CSS.append(".pemp>summary,.ptl>summary{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.pemp>summary small,.ptl>summary small{flex-basis:100%;color:var(--mu);font-weight:600;font-size:11.5px;line-height:1.5}.pemp{margin-top:6px}.ptl .fm{display:grid;gap:8px}"
+           ".xrow .xn{flex:1;min-width:0}.xrow .xp{flex:0 0 46%;min-width:0}.xrow .xp small{line-height:1.5}")
+EN.update({'باقي الأنواع':'Other types','⋯ أدوات الصيدلية':'⋯ Pharmacy tools'})
+# warehouse: one line of numbers; filters folded
+rep("<div class=\"ckpi\"><div><small>عدد الأصناف</small><b>${W0.length}</b></div><div><small>إجمالي القطع</small><b>${wq(W0.filter(x=>x.unit!='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b></div><div><small>إجمالي الأمتار</small><b>${wq(W0.filter(x=>x.unit=='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b></div><div><small>آخر حركة</small><b style=\"font-size:13px\">${last?fd(last.at).slice(0,10):'—'}</b></div></div>",
+    "<div class=\"whst\"><span><b>${W0.length}</b> صنف</span><span><b>${wq(W0.filter(x=>x.unit!='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b> قطعة</span><span><b>${wq(W0.filter(x=>x.unit=='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b> متر</span><span>آخر حركة <b>${last?fd(last.at).slice(0,10):'—'}</b></span></div>")
+rep(" ${whChips(W0,F)}<div class=\"c2\"><label>نوع الدعاية<select data-whf=\"ty\">",
+    " ${whChips(W0,F)}<details class=\"whfl\" data-id=\"__whf\"${V.op.__whf||F.ty||F.sec||F.mat||F.low?' open':''}><summary>${ic('filter')} فلتر${[F.ty,F.sec,F.mat,F.low].filter(Boolean).length?' ('+[F.ty,F.sec,F.mat,F.low].filter(Boolean).length+')':''}</summary><div class=\"c2\"><label>نوع الدعاية<select data-whf=\"ty\">")
+rep(" <label class=\"chk\"><input type=\"checkbox\" id=\"whlow\"${F.low?' checked':''}> رصيد قليل بس</label></div>",
+    " <label class=\"chk\"><input type=\"checkbox\" id=\"whlow\"${F.low?' checked':''}> رصيد قليل بس</label></details></div>")
+CSS.append(".whst{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space-between;background:var(--c2);border:1px solid var(--ln);border-radius:12px;padding:10px 12px;color:var(--mu);font-size:12.5px;font-weight:700}.whst b{color:var(--tx);font-size:15px}.whfl{margin-top:8px}.whfl>summary{cursor:pointer;font-weight:800;display:flex;align-items:center;gap:6px;padding:6px 0}.whfl>summary svg{width:18px;height:18px}")
+
+# =====================================================================
+# 5. warehouse: old stock (old design side acrylic, old gandola side acrylic, blank acrylic) + out-of-stock alert
+# =====================================================================
+rep("const L=W0.filter(x=>(F.sh===''||F.sh==null||x.sh==F.sh)&&", "const L=W0.filter(x=>(!F.old||x.old)&&(F.sh===''||F.sh==null||x.sh==F.sh)&&")
+rep("<button class=\"${on('')?'pr':''}\" data-whsh=\"all\">الكل <small>${W.length}</small></button></div>`}",
+    "<button class=\"${on('')?'pr':''}\" data-whsh=\"all\">الكل <small>${W.length}</small></button>${W.some(x=>x.old)?`<button class=\"${F.old?'pr':''} whold\" data-whold=\"1\">🕰 قديم <small>${W.filter(x=>x.old).length}</small></button>`:''}</div>`}")
+rep("<div class=\"whi\"><b>${esc(x.ty)}</b>", "<div class=\"whi\"><b>${esc(x.ty)}${x.old?' <small class=\"rshc odt\">تصميم قديم</small>':''}</b>")
+rep(" ${whLow()?`<div class=\"alr\"><small>⚠ ${whLow()} صنف رصيده وصل للحد الأدنى أو أقل.</small></div>`:''}",
+    " ${whLow()?`<div class=\"alr\"><small>⚠ ${whLow()} صنف رصيده وصل للحد الأدنى أو أقل.</small></div>`:''}${whOutHtml()}")
+rep("<button class=\"lnk\" data-whadd=\"1\">إضافة صنف بمقاس خاص (كتابة يدوي) ›</button>`}",
+    "<button class=\"lnk\" data-whadd=\"1\">إضافة صنف بمقاس خاص (كتابة يدوي) ›</button><button class=\"lnk\" data-whoa=\"1\">🕰 إضافة مخزون قديم (تصميم قديم / أكريليك فاضي) ›</button>`}")
+rep("return o}\nfunction whFrom(p,t,r,i){", "return o.concat(whOldOpts(p,t,r))}\nfunction whFrom(p,t,r,i){")
+rep(" if(c.k=='a'){const x=WU().find(y=>y.id==c.id);if(!x||+x.qty<c.n)return;whAdd(x,-c.n,'out','ph:'+p.no,'سحب لبند في الصيدلية (مقاس تاني)');",
+    " if(c.k=='o'){const x=WU().find(y=>y.id==c.id);if(!x||+x.qty<c.n)return;whAdd(x,-c.n,'out','ph:'+p.no,'سحب '+x.ty+' لبند في الصيدلية');r.wo=(+r.wo||0)+c.n;sv();tt.remove();render();return toastT('✓ اتسحب من المخزون القديم')}\n if(c.k=='a'){const x=WU().find(y=>y.id==c.id);if(!x||+x.qty<c.n)return;whAdd(x,-c.n,'out','ph:'+p.no,x.old?'سحب تصميم قديم لبند في الصيدلية':'سحب لبند في الصيدلية (مقاس تاني)');")
+JS.append(r"""// ---------- v3.4: warehouse old stock + out-of-stock alert ----------
+const OLDT={saw:'Side Acrylic Shelves Wall · تصميم قديم',saf:'Side Acrylic Shelves Floor · تصميم قديم',egs:'End gandola - Side أكريليك · تصميم قديم',bwh:'أكريليك فاضي · Wall Header',bfh:'أكريليك فاضي · Floor Header',beg:'أكريليك فاضي · Side جندولة'};
+const OLDL={saw:'Side Acrylic رفوف جداري (تصميم قديم)',saf:'Side Acrylic رفوف أرضي (تصميم قديم)',egs:'End gandola Side أكريليك + ستيكر (تركي عادي، تصميم قديم)',bwh:'أكريليك فاضي للـ Wall Header',bfh:'أكريليك فاضي للـ Floor Header',beg:'أكريليك فاضي للـ Side جندولة'};
+const OGS='100×25';
+function whoSz(k,sh){if(k=='saw')return SZ('saw');if(k=='saf')return SZ('saf.'+sh);if(k=='egs'||k=='beg')return [OGS];if(k=='bwh')return (sh==2?['100']:SZ('wh.len')).map(l=>SZ('wh.h')[sh]+'×'+l);if(k=='bfh'){const a=[SZ('fh.s')[sh]];if(sh!=2&&!a.includes(SZ('fh.l')))a.push(SZ('fh.l'));return a}return []}
+function whoD(){const d=V.wo=V.wo||{k:'saw',sh:2,sec:'Health',sd:'يمين',nm:'',sz:'',q:1};if(d.k=='saw')d.sh=2;if(d.k=='egs'||d.k=='beg')d.sh=0;const S=whoSz(d.k,d.sh);if(!S.includes(d.sz))d.sz=S[0]||'';if(d.k=='egs'&&!EG.includes(d.nm))d.nm=EG[0]||'';return d}
+function whoHtml(){const d=whoD(),k=d.k,S=whoSz(k,d.sh),sel=(id,L,v,lab)=>`<label>${lab}<select data-wo="${id}">${L.map(x=>{const[v2,l2]=Array.isArray(x)?x:[x,x];return `<option value="${esc(v2)}"${String(v2)==String(v)?' selected':''}>${esc(l2)}</option>`}).join('')}</select></label>`;
+ return `<div class="wcard"><h2>🕰 إضافة مخزون قديم</h2><p class="sub">أصناف التصميم القديم والأكريليك الفاضي بتتحفظ لوحدها بعلامة «تصميم قديم»، ومش بتتسحب لوحدها لأي بند. لما يبقى فيه بند في صيدلية بنفس المقاس البرنامج بيعرضها عليك في «📦 من المخزن».</p>
+ ${sel('k',Object.keys(OLDL).map(x=>[x,OLDL[x]]),k,'الصنف')}
+ ${['saf','bwh','bfh'].includes(k)?sel('sh',SH.map((x,i)=>[i,x]),d.sh,'نوع الرفوف'):`<p class="sub">نوع الرفوف: <b>${SH[d.sh]}</b></p>`}
+ ${k=='saw'?sel('sec',S4.concat(['Pharmacy']),d.sec,'القسم'):k=='saf'?sel('sec',S4,d.sec,'القسم'):''}
+ ${k=='egs'?sel('nm',EG,d.nm,'القسم · المسمى'):''}
+ ${sel('sz',S,d.sz,'المقاس (سم)')}
+ ${k=='saw'||k=='saf'?sel('sd',['يمين','يسار'],d.sd,'الجهة'):''}
+ <label>العدد<input type="number" inputmode="numeric" min="1" data-wo="q" value="${esc(d.q)}"></label>
+ <div class="tt"><button class="pr big" data-whosave="1">${ic('check')}حفظ في المخزن</button><button data-whox="1">رجوع</button></div></div>
+ ${(()=>{const L=WU().filter(x=>x.old);return L.length?`<div class="wcard"><b>المخزون القديم (${L.length} صنف)</b>${L.map(whCard).join('')}</div>`:''})()}`}
+function whoSave(){const d=whoD(),q=wq(+d.q||0);if(!(q>0))return alert('اكتب العدد');if(!d.sz)return alert('اختار المقاس');
+ const o={sh:d.sh,ty:OLDT[d.k],nm:d.k=='egs'?d.nm:(d.k=='saw'||d.k=='saf')?d.sd:'',sec:(d.k=='saw'||d.k=='saf')?d.sec:'',mat:d.k[0]=='b'?'أكريليك فاضي':'أكريليك + ستيكر',size:d.sz,old:1};
+ const x=whAdd(o,q,'in','manual','مخزون قديم');x.old=1;sv();snd('ok');d.q=1;render();toastT(`✓ اتضاف ${q} · ${OLDL[d.k]} · ${d.sz} (الرصيد ${wq(x.qty)})`)}
+function whOldOpts(p,t,r){if(!p||p._wh||p._rc)return [];const W=WU().filter(x=>x.old&&+x.qty>=1);if(!W.length)return [];const need=Math.max(0,qn(r)-(+r.r||0)),O=[],sz=v=>String(v||'').replace(/\s+/g,''),sh=rsh(r,p.sh);
+ const add=(x,n,k,lab)=>{n=Math.min(n,Math.floor(+x.qty));if(n>0)O.push({k,id:x.id,n,txt:`🕰 ${n} ${lab} (في المخزن ${wq(x.qty)})`})};
+ if(need>0&&(t.id=='saw'||t.id=='saf'))W.filter(x=>x.ty==OLDT[t.id]&&(t.id=='saw'||x.sh==sh)&&x.sec==r.sec&&sz(x.size)==sz(r.sz)&&x.nm==r.sd).forEach(x=>add(x,need,'a','تصميم قديم بنفس المقاس'));
+ if(need>0&&t.id=='eg'&&sh<=1){const n=PARTS.eg[1][1]*need;W.filter(x=>(x.ty==OLDT.egs&&x.nm==r.nm)||x.ty==OLDT.beg).forEach(x=>add(x,n,'o',x.ty==OLDT.egs?'سايد أكريليك تصميم قديم':'أكريليك فاضي للسايد '+OGS))}
+ if(need>0&&t.id=='wh'&&!wood(r)){const s0=SZ('wh.h')[sh]+'×'+r.len;W.filter(x=>x.ty==OLDT.bwh&&x.sh==sh&&sz(x.size)==sz(s0)).forEach(x=>add(x,need,'o','أكريليك فاضي بنفس المقاس'))}
+ if(need>0&&t.id=='fh'){const z=szOf(t.z(r,p.sh));W.filter(x=>x.ty==OLDT.bfh&&x.sh==sh&&sz(x.size)==sz(z)).forEach(x=>add(x,need,'o','أكريليك فاضي بنفس المقاس'))}
+ return O}
+function whOut(){const W=WU().filter(x=>!x.old&&+x.qty<=0),R=[];
+ if(W.length){const need=[];DB.ph.forEach(p=>{if(!isBr(p)||p.st=='مكتملة'||p._wh)return;TY(p).forEach(t=>(p.rows[t.id]||[]).forEach(r=>{const n=Math.max(0,qn(r)-(+r.r||0));if(!n)return;whParts(t,r,p.sh).forEach(y=>{if(!y.pk)need.push({p,k0:whKey0(y),n:n*y.f})})}))});
+  W.forEach(x=>{if(whQty(x)>0)return;const k0=whKey0(x),m={};need.filter(y=>y.k0==k0).forEach(y=>{m[y.p.no]=(m[y.p.no]||0)+y.n});const P=Object.keys(m);if(P.length&&!R.some(o=>whKey0(o.x)==k0))R.push({x,P:P.map(no=>({no,n:wq(m[no])}))})})}
+ return R}
+function whOutHtml(){const R=whOut();if(!R.length)return '';return `<details class="alr wout" data-id="__wout"${V.op.__wout?' open':''}><summary>⚠ ${R.length} صنف خلص من المخزن وفيه صيدليات محتاجاه <small>التفاصيل ›</small></summary>${R.map(o=>`<small>• <b>${esc(o.x.ty)}</b>${whNm(o.x)?' · '+esc(whNm(o.x)):''} · ${esc(o.x.size||'')} — ${o.P.map(y=>'صيدلية '+esc(y.no)+' ('+y.n+')').join('، ')}</small>`).join('')}<small>اطلبهم من الطباعة (نواقص الطباعة).</small></details>`}
+function v34WhClick(d,b){
+ if(d.whold){V.wf=V.wf||{};V.wf.old=!V.wf.old;if(V.wf.old)V.wf.sh='';render();return 1}
+ if(d.whoa){V.wo=null;goV(Object.assign(V,{v:'who'}));return 1}
+ if(d.whosave){whoSave();return 1}
+ if(d.whox){goV({v:'wh',op:{},dr:{},q:V.q,wf:V.wf});return 1}
+ return 0}
+function v34WhChange(x){if(!x.dataset||x.dataset.wo==null)return 0;const d=whoD(),k=x.dataset.wo;d[k]=k=='sh'?+x.value:x.value;if(k=='k'){d.sz='';if(d.k=='saf'&&d.sh==2&&false)d.sh=0}render();return 1}
+""")
+rep("if(usrClick(d,b)||v34DlClick(d,b)||", "if(usrClick(d,b)||v34WhClick(d,b)||v34DlClick(d,b)||")
+rep("v33Change(x)||v34Change(x)||", "v33Change(x)||v34Change(x)||v34WhChange(x)||")
+rep("\n if(V.v=='gd'){", "\n if(V.v=='who'){a.innerHTML=hdr('<button data-whox=\"1\">‹ المخزن</button>','🕰 مخزون قديم')+`<main>${whoHtml()}</main>`;return}\n if(V.v=='gd'){")
+rep("wh:'wh',whe:'wh',", "wh:'wh',whe:'wh',who:'wh',")
+CSS.append(".whold{border-style:dashed}.wout>summary{cursor:pointer;font-weight:800;display:flex;justify-content:space-between;gap:8px}.wout>summary small{white-space:nowrap}.wout small{display:block;margin-top:4px}")
+EN.update({'🕰 إضافة مخزون قديم':'🕰 Add old stock','🕰 مخزون قديم':'🕰 Old stock','تصميم قديم':'Old design','أكريليك فاضي':'Blank acrylic'})
+
+# =====================================================================
 # write
 # =====================================================================
 JSA = '\n'.join(JS)
