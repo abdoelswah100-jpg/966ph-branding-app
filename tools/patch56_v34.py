@@ -207,7 +207,7 @@ function phCards(p){const A=TY(p),fo=V.fo||{},F=A.filter(t=>t.auto||(p.rows[t.id
 """)
 CSS.append(".pemp>summary,.ptl>summary{display:flex;flex-wrap:wrap;align-items:center;gap:6px}.pemp>summary small,.ptl>summary small{flex-basis:100%;color:var(--mu);font-weight:600;font-size:11.5px;line-height:1.5}.pemp{margin-top:6px}.ptl .fm{display:grid;gap:8px}"
            ".xrow .xn{flex:1;min-width:0}.xrow .xp{flex:0 0 46%;min-width:0}.xrow .xp small{line-height:1.5}")
-EN.update({'باقي الأنواع':'Other types','⋯ أدوات الصيدلية':'⋯ Pharmacy tools'})
+EN.update({'باقي الأنواع':'Other types','⋯ أدوات الصيدلية':'⋯ Pharmacy tools','Checklist · حفظ · نسخ · قالب':'Checklist · save · copy · template','صيدلية معدلة لسه ما اتصدّرتش':'pharmacies changed and not exported yet','آخر استيراد قديم':'last import is old','⚠ المزامنة:':'⚠ Sync:'})
 # warehouse: one line of numbers; filters folded
 rep("<div class=\"ckpi\"><div><small>عدد الأصناف</small><b>${W0.length}</b></div><div><small>إجمالي القطع</small><b>${wq(W0.filter(x=>x.unit!='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b></div><div><small>إجمالي الأمتار</small><b>${wq(W0.filter(x=>x.unit=='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b></div><div><small>آخر حركة</small><b style=\"font-size:13px\">${last?fd(last.at).slice(0,10):'—'}</b></div></div>",
     "<div class=\"whst\"><span><b>${W0.length}</b> صنف</span><span><b>${wq(W0.filter(x=>x.unit!='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b> قطعة</span><span><b>${wq(W0.filter(x=>x.unit=='متر').reduce((a,x)=>a+(+x.qty||0),0))}</b> متر</span><span>آخر حركة <b>${last?fd(last.at).slice(0,10):'—'}</b></span></div>")
