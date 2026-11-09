@@ -223,7 +223,7 @@ CSS.append(".whst{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:space
 rep("const L=W0.filter(x=>(F.sh===''||F.sh==null||x.sh==F.sh)&&", "const L=W0.filter(x=>(!F.old||x.old)&&(F.sh===''||F.sh==null||x.sh==F.sh)&&")
 rep("<button class=\"${on('')?'pr':''}\" data-whsh=\"all\">الكل <small>${W.length}</small></button></div>`}",
     "<button class=\"${on('')?'pr':''}\" data-whsh=\"all\">الكل <small>${W.length}</small></button>${W.some(x=>x.old)?`<button class=\"${F.old?'pr':''} whold\" data-whold=\"1\">🕰 قديم <small>${W.filter(x=>x.old).length}</small></button>`:''}</div>`}")
-rep("<div class=\"whi\"><b>${esc(x.ty)}</b>", "<div class=\"whi\"><b>${esc(x.ty)}${x.old?' <small class=\"rshc odt\">تصميم قديم</small>':''}</b>")
+rep("<div class=\"whi\"><b>${esc(x.ty)}</b>", "<div class=\"whi\"><b>${esc(x.ty)}${x.old&&!/قديم/.test(x.ty)?' <small class=\"rshc odt\">تصميم قديم</small>':''}</b>")
 rep(" ${whLow()?`<div class=\"alr\"><small>⚠ ${whLow()} صنف رصيده وصل للحد الأدنى أو أقل.</small></div>`:''}",
     " ${whLow()?`<div class=\"alr\"><small>⚠ ${whLow()} صنف رصيده وصل للحد الأدنى أو أقل.</small></div>`:''}${whOutHtml()}")
 rep("<button class=\"lnk\" data-whadd=\"1\">إضافة صنف بمقاس خاص (كتابة يدوي) ›</button>`}",
@@ -279,13 +279,70 @@ CSS.append(".whold{border-style:dashed}.wout>summary{cursor:pointer;font-weight:
 EN.update({'🕰 إضافة مخزون قديم':'🕰 Add old stock','🕰 مخزون قديم':'🕰 Old stock','تصميم قديم':'Old design','أكريليك فاضي':'Blank acrylic'})
 
 # =====================================================================
+# 6. Google Drive from the web link (https, GitHub Pages): sign in with Google Identity Services, same uploads as the
+#    phone (own file names), automatic read of the other device's latest file (both ways), monthly Excel
+# =====================================================================
+rep("const DA=()=>CP('DriveAuth');", "const DA=()=>CP('DriveAuth')||(GWEB()?GWAuth:null);")
+rep("const sz=await gdPut('966-day-'+td+'.json',JSON.stringify(gdDay()));", "const sz=await gdPut(gdNm('day')+td+'.json',JSON.stringify(gdDay()));")
+rep("name=n.month?'966-month-'+n.month+'.json':'966-full-'+td+'.json';", "name=n.month?gdNm('month')+n.month+'.json':gdNm('full')+td+'.json';")
+rep("    gdU(o=>{o.full=td;if(n.month)o.mon=n.month;", "    if(n.month){try{const xb=xlsxAll();await gdPutBlob(name.replace(/\\.json$/,'.xlsx'),xb,xb.type)}catch(e){if(e.need)throw e;console.warn(e)}}\n    gdU(o=>{o.full=td;if(n.month)o.mon=n.month;")
+rep("async function gdPrune(){const L=await gdList();for(const [k,n] of Object.entries(GDKEEP)){const A=L.filter(f=>new RegExp('^966-'+k+'-').test(f.name)).sort((a,b)=>a.name<b.name?1:-1);",
+    "async function gdPrune(){const L=await gdList(),K=Object.entries(GWEB()?GDKEEPW:GDKEEP).map(([k,n])=>[k,n,'json']).concat([[GWEB()?'lapmonth':'month',12,'xlsx']]);for(const [k,n,x] of K){const A=L.filter(f=>new RegExp('^966-'+k+'-.*\\\\.'+x+'$').test(f.name)).sort((a,b)=>a.name<b.name?1:-1);")
+
+rep("if(CAPN()&&o.on&&o.ed>=30){clearTimeout(GDE);GDE=setTimeout(()=>gdTick(),8000)}", "if((CAPN()||GWEB())&&o.on&&o.ed>=30){clearTimeout(GDE);GDE=setTimeout(()=>gdTick(),8000)}")
+rep("if(x&&x.isActive)setTimeout(()=>gdTick(),2500)});setInterval(()=>gdTick(),15*60e3);\n const o=gdS();if(o.on){if(!o.mb)gdU(x=>x.mb=gdPrevM(TD()));gdTick()}}",
+    "if(x&&x.isActive)setTimeout(()=>{gdPull();gdTick()},2500)});setInterval(()=>{gdPull();gdTick()},15*60e3);if(GWEB()){gwLoad().catch(()=>{});window.addEventListener('online',()=>setTimeout(()=>{gdPull();gdTick()},3000))}\n const o=gdS();if(o.on){if(!o.mb)gdU(x=>x.mb=gdPrevM(TD()));gdPull().then(()=>gdTick())}}")
+rep("function gdHtml(){const o=gdS(),nat=CAPN(),L=V.gdl;", "function gdHtml0(nat){const o=gdS(),L=V.gdl;")
+rep("function gdLine(btn){const o=gdS(),nat=CAPN();", "function gdLine(btn){const o=gdS(),nat=CAPN()||GWEB();")
+rep("data-gdrs=\"${esc(nat?f.id:f.name)}\"", "data-gdrs=\"${esc(f.id||f.name)}\"")
+rep("data-gdrr=\"${esc(nat?f.id:f.name)}\"", "data-gdrr=\"${esc(f.id||f.name)}\"")
+rep("const A=L.filter(f=>f.name.startsWith('966-'+k+'-'));", "const A=L.filter(f=>f.name.startsWith('966-'+k+'-')&&/\\.json$/.test(f.name));")
+rep("['month','شهرية'],['laptop','اللاب توب']]", "['month','شهرية'],['laptop','اللاب توب'],['lapfull','اللاب توب كاملة'],['lapmonth','اللاب توب شهرية']]")
+rep("async function gdRestore(id,mode){const L=V.gdl||[],f=L.find(x=>(CAPN()?x.id:x.name)==id);", "async function gdRestore(id,mode){const L=V.gdl||[],f=L.find(x=>(x.id||x.name)==id);")
+rep("const q=CAPN()?await gdGet(id):JSON.parse(await (await f.h.getFile()).text());", "const q=f.id?await gdGet(f.id):JSON.parse(await (await f.h.getFile()).text());")
+rep("toastT('✓ اتربط Google Drive');gdTick()", "toastT('✓ اتربط Google Drive');gdPull().then(()=>gdTick())")
+JS.append(r"""// ---------- v3.4: Google Drive from the web link (GitHub Pages) ----------
+const GWID='1052360360258-3voqs2f8m6qteq4jjldmqp34itpl48td.apps.googleusercontent.com',GWURL='https://abdoelswah100-jpg.github.io/966ph-branding-app/';
+const GWEB=()=>!CAPN()&&location.protocol=='https:';
+const GDKEEPW={laptop:14,lapfull:4,lapmonth:12};
+const gdNm=k=>GWEB()?{day:'966-laptop-',full:'966-lapfull-',month:'966-lapmonth-'}[k]:'966-'+k+'-';
+let GWL=null;
+function gwLoad(){if(window.google&&google.accounts&&google.accounts.oauth2)return Promise.resolve();if(GWL)return GWL;GWL=new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://accounts.google.com/gsi/client';s.async=true;s.onload=()=>ok();s.onerror=()=>{GWL=null;s.remove();no(new Error('مفيش نت أو صفحة جوجل مش متاحة'))};document.head.appendChild(s)});return GWL}
+function gwSaved(){try{const o=JSON.parse(localStorage.getItem('966gwt')||'null');if(o&&o.exp>Date.now()+60e3)return o}catch(e){}return null}
+const GWAuth={async authorize(o){const s=gwSaved();if(s)return {token:s.t};if(!o||!o.interactive)return {need:1};await gwLoad();
+  return await new Promise((ok,no)=>{const c=google.accounts.oauth2.initTokenClient({client_id:GWID,scope:'https://www.googleapis.com/auth/drive.file',callback:r=>{if(r&&r.access_token){const exp=Date.now()+((+r.expires_in||3600)-120)*1000;try{localStorage.setItem('966gwt',JSON.stringify({t:r.access_token,exp}));localStorage.setItem('966gwu','1')}catch(e){}ok({token:r.access_token})}else no(new Error((r&&(r.error_description||r.error))||'تسجيل الدخول ما نجحش'))},error_callback:e=>no(new Error(e&&e.type=='popup_closed'?'نافذة جوجل اتقفلت قبل ما تكمل':e&&e.type=='popup_failed_to_open'?'المتصفح منع نافذة جوجل. اسمح بالـ popups للموقع ده':(e&&e.message)||'تسجيل الدخول ما نجحش'))});let u=null;try{u=localStorage.getItem('966gwu')}catch(e){}c.requestAccessToken({prompt:u?'':'consent'})})},
+ async clearToken(){try{localStorage.removeItem('966gwt')}catch(e){}}};
+async function gdPutBlob(name,blob,mime){const fid=await gdFolder();const r0=await gdF('drive/v3/files?fields=files(id)&q='+gdQ("name='"+name+"' and '"+fid+"' in parents and trashed=false"));const ex=((await r0.json()).files||[])[0];
+ const B='966x'+Date.now(),meta=ex?{}:{name,parents:[fid],mimeType:mime},body=new Blob(['--'+B+'\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n'+JSON.stringify(meta)+'\r\n--'+B+'\r\nContent-Type: '+mime+'\r\n\r\n',blob,'\r\n--'+B+'--'],{type:'multipart/related; boundary='+B});
+ await gdF('upload/drive/v3/files'+(ex?'/'+ex.id:'')+'?uploadType=multipart&fields=id',{method:ex?'PATCH':'POST',headers:{'Content-Type':'multipart/related; boundary='+B},body});return blob.size}
+// read the other device's newest daily file and merge it (phone ← 966-laptop-…, web link ← 966-day-…)
+let GDPB=0;
+async function gdPull(manual){if(!DA()||GDPB||!DB)return;const o=gdS();if(!o.on||(o.need&&!manual))return;GDPB=1;let t=null;
+ try{const net=await gdNet();if(!net.on){if(manual)alert('مفيش نت');return}if(manual)t=toast('☁️ جاري البحث عن آخر ملف…');
+  const L=await gdList(),re=GWEB()?/^966-day-.*\.json$/:/^966-laptop-.*\.json$/,A=L.filter(f=>re.test(f.name)).sort((a,b)=>String(b.modifiedTime||'').localeCompare(String(a.modifiedTime||''))),f=A[0];
+  if(!f){if(manual)alert(GWEB()?'مفيش ملفات من الموبايل في Drive لسه.':'مفيش ملفات من اللاب توب في Drive لسه (أو الموبايل مش شايفها).');return}
+  if(!manual&&o.pf==f.id&&o.pm==f.modifiedTime)return;
+  const q=await gdGet(f.id),msg=await gdApply(q,'merge','قبل دمج '+f.name+' من Google Drive');gdU(x=>{x.pf=f.id;x.pm=f.modifiedTime;x.pn=f.name;x.pt=nowIso()});render();toastT('☁️ اتدمجت آخر بيانات '+(GWEB()?'الموبايل':'اللاب توب')+' · '+msg)}
+ catch(e){console.warn(e);if(e.need){if(manual)alert('محتاج تسجيل دخول Google الأول');else gdNeedNote()}else if(manual)alert('⚠ '+(e.message||e))}
+ finally{GDPB=0;if(t)t.remove()}}
+function gdPullHtml(){const o=gdS();if(!o.on)return '';const w=GWEB()?'الموبايل':'اللاب توب';return `<div class="wcard"><h3>☁️ بيانات ${w}</h3><small>${o.pn?'آخر دمج تلقائي: <b>'+esc(o.pn.replace(/^966-|\.json$/g,''))+'</b> · '+fd(o.pt):'لسه مفيش دمج من '+w}</small><br><small>بيتقرا ويتدمج لوحده كل ما تفتح التطبيق وكل 15 دقيقة (كل صيدلية بتاخد الأحدث، وقبلها نقطة استعادة).</small><div class="tt"><button data-gdpull="1">${ic('db')}اقرا آخر بيانات ${w} دلوقتي</button></div></div>`}
+function gdHtml(){if(CAPN())return gdHtml0(true)+gdPullHtml();
+ if(GWEB())return `<div class="ph"><small>🌐 فاتح التطبيق من اللينك. Google Drive بيشتغل هنا زي الموبايل بالظبط: بيرفع لوحده، وبيقرا آخر بيانات الموبايل لوحده.</small></div>`+gdHtml0(true)+gdPullHtml()+`<details class="pinfo" data-id="__gdo"${V.op.__gdo?' open':''}><summary>${ic('file')} الطريقة القديمة: فولدر Drive for desktop</summary>${gdHtml0(false)}</details>`;
+ return `<div class="ywarn">💡 علشان Google Drive يشتغل لوحده على اللاب توب (يرفع ويقرا بيانات الموبايل من غير Drive for desktop) افتح التطبيق من اللينك:<br><a href="${GWURL}" target="_blank" rel="noopener" dir="ltr">${GWURL}</a><br><small>بياناتك اللي على المتصفح ده مش بتتنقل للينك لوحدها: احفظ نسخة احتياطية هنا واستوردها هناك، أو سيبه يقرا من Drive بعد الربط.</small></div>`+gdHtml0(false)}
+// web link: installable app (iPhone / laptop) that works offline
+if(location.protocol=='https:'&&!CAPN()){try{const l=document.createElement('link');l.rel='manifest';l.href='manifest.webmanifest';document.head.appendChild(l);const a=document.createElement('link');a.rel='apple-touch-icon';a.href='icon-180.png';document.head.appendChild(a);[['apple-mobile-web-app-capable','yes'],['apple-mobile-web-app-title','966Ph'],['theme-color','#061233']].forEach(([n,c])=>{const m=document.createElement('meta');m.name=n;m.content=c;document.head.appendChild(m)});if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}catch(e){}}
+""")
+JS[:]=[j.replace("function v34Click(d,b){","function v34Click(d,b){\n if(d.gdpull){gdPull(true);return 1}") for j in JS]
+EN.update({'الطريقة القديمة: فولدر Drive for desktop':'Old way: Drive for desktop folder'})
+
+# =====================================================================
 # write
 # =====================================================================
 JSA = '\n'.join(JS)
 rep("// ---------- v1.5 extras ----------", JSA + "// ---------- v1.5 extras ----------")
 rep("body.cap .capno{display:none!important}", "body.cap .capno{display:none!important}\n" + ''.join(CSS) + "\n")
-if os.environ.get('V34_FINAL') == '1':
-    rep("VER='v3.3'", "VER='v3.4'")
+rep("VER='v3.3'", "VER='v3.4'")
+rep(" changelog:[{version:'v3.3',", " changelog:[{version:'v3.4',date:'2026-11-09',changes:['Custody: count of invoices without a paper invoice (tile that filters the table), «مشاركة…/حفظ…» menus, invoices without paper only or the full custody (Excel + PDF + those invoices) with a picker, the count and the handover date in the Excel/PDF, wider «البيان»','Custody handover «✅ تسليم العهدة»: saves the files, stamps the month «تم التسليم» and locks it, starts the next month with the remaining (or the full custody), «فتح للتعديل» and «إعادة التسليم» (asks to update the next month opening)','Bottom bar: «الصيانة» tab (maintenance pharmacies + report, folded) instead of «النسخ» (moved to the menu); the pharmacies tab shows branding pharmacies only','Layout: compact home card, sync alert as a small bar, pharmacy types with items first and the empty ones folded, pharmacy tools folded, execution cards, warehouse numbers in one line and folded filters','Warehouse: old stock (old design side acrylic, old End gandola side acrylic 100×25, blank acrylic for Wall/Floor Header and gandola side) offered when the size matches; alert when an item ran out and pharmacies still need it','Google Drive from the web link (GitHub Pages): Google sign-in on the laptop/iPhone, same uploads as the phone (966-laptop-…), automatic read of the other device newest file both ways, monthly Excel on Drive; installable and offline on the web link']},{version:'v3.3',")
 k = s.index('const EN_D=') + len('const EN_D='); j = s.index(';let TRX=null;', k)
 D = json.loads(s[k:j])
 for a2, c in EN.items(): D.setdefault(a2, c)
