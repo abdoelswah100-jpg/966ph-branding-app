@@ -31,10 +31,9 @@
 - كل ملفات PDF و Excel والنسخ: `Documents/966Ph`
 - النسخ الاحتياطية التلقائية اليومية (آخر 7 أيام): `Documents/966Ph/auto-backups`
 
-## Source and build (since v1.3)
+## Source and build (since 1.1)
 
-- `src/app.html` – the app source (light: logo and built-in images are placeholders). **Edit this file.**
-- `src/bimg.json` – built-in name images (Wall/Floor 714×150, gandola 440×154), `src/logo.txt` – logo data URI.
-- `python3 tools/build.py` – builds `dist/966Ph Branding vX.html` (laptop) and `www/index.html` (APK), and checks JS syntax.
+- `src/` – the app source, split in folders (see `src/README.md`); `src/manifest.txt` gives the order.
+- `python3 tools/build.py` – builds `dist/966Ph Branding vX.html` (laptop), the AI-lite file and `www/index.html` (APK + web link), and checks JS syntax.
 - `tests/` – Playwright regression tests (see tests/README.md).
-- Branch `cleanup` – code cleanup, one step per commit, zero behaviour change.
+- `tools/legacy/` – the patch scripts used up to v3.9 on the old single file (history only).

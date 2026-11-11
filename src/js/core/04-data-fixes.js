@@ -1,0 +1,10 @@
+function mig2(p){if(p.m2)return;const R=p.rows||{};(R.fh||[]).forEach(r=>{if(r.sec=='Baby')r.sz='قياسي'});(R.saf||[]).forEach(r=>{if(typeof r.sz=='string')r.sz=r.sz.replace('32×140','30×140')});p.m2=1}
+function migHR(p){const a=p&&p.rows&&p.rows.al;if(Array.isArray(a)&&a.some(r=>r&&r.sec=='Health Room'))p.rows.al=a.filter(r=>!(r&&r.sec=='Health Room'))}
+function migCK(p){Object.values((p&&p.rows)||{}).forEach(a=>{if(Array.isArray(a))a.forEach(r=>{if(r&&r.ck!=null){if(r.ck&&r.r==null)r.r=r.q==null?1:(+r.q||0);delete r.ck}})})}
+function migPK(p){if(p.m16b)return;((p.rows||{}).eg||[]).forEach(r=>{if(!egPK(r,p.sh))return;if(r.pq!=null&&r.pq!==''&&r.pR==null){r.pR=r.pL=+r.pq||0}delete r.pq;['r','x'].forEach(k=>{const old=r[k+'p']!=null?+r[k+'p']:(r[k]!=null?+r[k]||0:null);if(old!=null)SDS.forEach(([sd])=>{if(r[k+'p'+sd]==null)r[k+'p'+sd]=Math.min(egN(r,p.sh,sd),old)});delete r[k+'p']});if(r.wfp!=null){SDS.forEach(([sd])=>r['wfp'+sd]=(+r['wfp'+sd]||0)+(+r.wfp||0));delete r.wfp}});p.m16=1;p.m16b=1}
+function migRX(p){if(p.m19)return;Object.values(p.rows||{}).forEach(a=>{if(Array.isArray(a))a.forEach(r=>{if(!r||typeof r!='object')return;if(r.x!=null&&(r.r==null||+r.r<+r.x))r.r=+r.x||0;['R','L'].forEach(sd=>{if(r['xp'+sd]!=null&&(r['rp'+sd]==null||+r['rp'+sd]<+r['xp'+sd]))r['rp'+sd]=+r['xp'+sd]||0})})});p.m19=1}
+function mig(p){mig2(p);migHR(p);migCK(p);migPK(p);migRX(p);migRCV(p);if(p.rr&&!Array.isArray(p.rr)){if(Object.keys(p.rr).length)p.rolls=Object.assign(p.rolls||{},p.rr);p.rr=[]}if(p.rows&&Array.isArray(p.rows.ab))p.rows.ab.forEach(r=>{if(r.it==='مسمار')r.it='Decorative nail'});if(p.m1)return;const R=p.rows=p.rows||{},ab=[];
+ (R.dn||[]).forEach(r=>ab.push({it:'Decorative nail',q:r.q,stt:'تصنيع وتركيب',nt:r.nt||''}));
+ (R.ab||[]).forEach(r=>ab.push(r.it?r:{it:'Acrylic board A3',q:r.q,stt:'تصنيع وتركيب',nt:r.nt||''}));
+ ABD().forEach(r=>ab.push(r));R.ab=ab;delete R.dn;delete R.p5;delete R.p4;delete R.ns;
+ (R.hm||[]).forEach(r=>(R.md=R.md||[]).push({nm:r.nm,q:r.q,nt:r.nt||''}));delete R.hm;delete R.sm;p.m1=1}

@@ -1,0 +1,4 @@
+// ---------- v3.2: merge a laptop / Drive backup file picked by hand ----------
+function gdMergeFile(q,name){if(!confirm(`دمج ${name} (${q.ph.length} صيدلية${q.device?' · من '+q.device:''}${q.at?' · '+fd(q.at):''}) مع البيانات اللي هنا؟\nكل صيدلية هتاخد النسخة الأحدث، والأقسام (العهدة، المخزن، الصيانة…) هتاخد اللي اتعدّل آخر واحد.\nهتتاخد نقطة استعادة قبلها.`))return;
+ const t=toast('جاري الدمج…');gdApply(q,'merge','قبل دمج '+name).then(m=>{t.remove();render();alert('✓ '+m)}).catch(e=>{t.remove();alert('⚠ الدمج ما نجحش: '+(e.message||e))})}
+function v32Change(x){if(x.id=='gdmfin'){const f=x.files[0];x.value='';if(!f)return 1;const rd=new FileReader();rd.onload=()=>{let q;try{q=JSON.parse(rd.result)}catch(e){q=null}if(q&&Array.isArray(q.ph))gdMergeFile(q,f.name);else if(q&&q.kind==SKIND)doSync(q);else alert('الملف ده مش نسخة من التطبيق. اختار ملف 966-laptop-… أو 966-day-…')};rd.readAsText(f);return 1}return 0}

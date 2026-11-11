@@ -2,8 +2,8 @@
 const MW=['تركيب','إزالة وتركيب','تغيير','صيانة (إعادة لصق)','إعادة تركيب','تصنيع وتركيب','طباعة فقط'];
 const MWC={'تركيب':'DDF1E4','إزالة وتركيب':'DCEBFA','تغيير':'FFF4D1','صيانة (إعادة لصق)':'FDE7D9','إعادة تركيب':'E5E1F5','تصنيع وتركيب':'D6F0EF','طباعة فقط':'EFEFEF'};
 const MMON=['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-const mAds=()=>[...new Set(T.filter(t=>t.id!='ga').map(t=>t.n).concat(['End gandola - Header','End gandola - Side','Side Acrylic','أخرى']))];
-function MU(){const c=DB.mnt=DB.mnt||{};c.items=c.items||[];c.cfg=Object.assign({region:(DB.cust&&DB.cust.cfg&&DB.cust.cfg.region)||'المنطقة الوسطى (الرياض)',sup:DB.cfg.dsup||'عبدالله السواح'},c.cfg||{});if(!c.cur)c.cur=mQ(TD());return c}
+const mAds=()=>[...new Set(T.filter(t=>t.id!='ga').flatMap(t=>t.id=='fr'?FRK.map(frAd):[t.n]).concat(['End gandola - Header','End gandola - Side','End gandola - Side Acrylic','Side Acrylic','أخرى']))];
+function MU(){const c=DB.mnt=DB.mnt||{};c.items=c.items||[];c.cfg=Object.assign({region:(DB.cust&&DB.cust.cfg&&DB.cust.cfg.region)||uRegTitle(),sup:U().nm||DB.cfg.dsup||'عبدالله السواح'},c.cfg||{});if(!c.cur)c.cur=mQ(TD());return c}
 const mQ=dt=>{const y=String(dt).slice(0,4),m=+String(dt).slice(5,7)||1;return y+'-Q'+Math.ceil(m/3)};
 const mQm=q=>{const n=+q.slice(-1);return [n*3-2,n*3-1,n*3]};
 const mQLab=q=>{const n=+q.slice(-1),M=mQm(q);return `الربع ${['','الأول','الثاني','الثالث','الرابع'][n]} ${q.slice(0,4)} (${M.map(m=>MMON[m]).join(' + ')})`};
@@ -13,12 +13,12 @@ function mPh(no){return DB.ph.filter(p=>String(p.no)==String(no)).sort((a,b)=>(b
 function mSize(ad,no){const p=mPh(no),s=p&&SH[p.sh]?p.sh:null;try{if(s==null)return '';if(ad=='Floor Header'){const v=SZ('fh.s')[s];return v?String(v):''}if(ad=='Medicated')return String(SZ('md.h')||'');if(ad=='Wall Header'){const v=SZ('wh.h')[s];return v?v+'×100':''}}catch(e){}return ''}
 function mDraft(o){const last=mList(MU().cur).slice(-1)[0];return Object.assign({id:Date.now()+Math.floor(Math.random()*1000),dt:TD(),ph:'',ct:'',work:'تركيب',ad:'',det:'',sz:'',q:1,note:'',imb:[],ima:[]},o||{})}
 function mOpen(d){V.me=d;goV(Object.assign(V,{v:'med'}))}
-function mntHtml(){const C=MU(),q=C.cur,L=mList(q),qs=[...new Set(C.items.map(x=>mQ(x.dt)).concat([q,mQ(TD())]))].sort().reverse(),pcs=L.reduce((a,x)=>a+(+x.q||0),0),nph=new Set(L.map(x=>String(x.ph))).size;
+function mntHtml0(){const C=MU(),q=C.cur,mf=String(V.mqf||'').trim().toLowerCase(),L=mList(q).filter(x=>!mf||[x.ph,x.ct,x.work,x.det,x.ad,x.sz,x.nt].join(' ').toLowerCase().includes(mf)),qs=[...new Set(C.items.map(x=>mQ(x.dt)).concat([q,mQ(TD())]))].sort().reverse(),pcs=L.reduce((a,x)=>a+(+x.q||0),0),nph=new Set(L.map(x=>String(x.ph))).size;
  const grp=mQm(q).map(m=>{const R=L.filter(x=>+x.dt.slice(5,7)==m);return `<tr class="mmo"><td colspan="6">شهر ${MMON[m]} (${m}) — ${R.length} عمل · ${R.reduce((a,x)=>a+(+x.q||0),0)} قطعة</td></tr>`+(R.length?R.map(x=>`<tr data-med="${x.id}"><td class="cdt">${esc(x.dt.slice(8,10)+'-'+x.dt.slice(5,7))}</td><td><b>${esc(x.ph)}</b>${x.ct?`<small>${esc(x.ct)}</small>`:''}</td><td><small class="ck" style="background:#${MWC[x.work]||'EFEFEF'}">${esc(x.work)}</small></td><td>${esc(x.det||x.ad)}${x.det&&x.ad?`<small>${esc(x.ad)}</small>`:''}</td><td>${esc(x.sz||'')}</td><td><b>${esc(x.q)}</b>${(x.imb||[]).length+(x.ima||[]).length?'<small>📎</small>':''}</td></tr>`).join(''):'<tr><td colspan="6" class="em">لا توجد صيانات مسجلة</td></tr>')}).join('');
  return `<div class="wcard cust"><div class="cuh"><b>كشف صيانات ${esc(C.cfg.region)}</b><small>${mQLab(q)} · ${esc(C.cfg.sup)}</small></div>
  <div class="ckpi"><div><small>عدد الأعمال</small><b>${L.length}</b></div><div><small>عدد القطع</small><b>${pcs}</b></div><div><small>عدد الصيدليات</small><b>${nph}</b></div><div><small>الربع</small><b style="font-size:14px">${q.slice(-2)} · ${q.slice(0,4)}</b></div></div>
  <div class="cbtn"><button class="pr" data-madd="1">${ic('add')}إضافة صيانة</button>${L.length?`<button data-mrep="1">${ic('copy')}تكرار آخر بند</button>`:''}</div></div>
- <div class="wcard"><div class="cmo"><label>الربع<select id="mqsel">${qs.map(x=>`<option value="${x}"${x==q?' selected':''}>${mQLab(x)}</option>`).join('')}</select></label></div>
+ <div class="wcard"><input class="sf" id="mqf" placeholder="🔍 بحث برقم الصيدلية أو نوع العمل" value="${esc(V.mqf||'')}"><div class="cmo"><label>الربع<select id="mqsel">${qs.map(x=>`<option value="${x}"${x==q?' selected':''}>${mQLab(x)}</option>`).join('')}</select></label></div>
  <div class="sc"><table class="ctab mtab"><tr><th>التاريخ</th><th>الصيدلية</th><th>نوع العمل</th><th>التفاصيل</th><th>المقاس</th><th>العدد</th></tr>${grp}<tr class="tot"><td colspan="5">الإجمالي</td><td>${pcs}</td></tr></table></div><p class="sub">اضغط على أي بند علشان تعدّله أو تمسحه.</p>
  <div class="cshare"><button class="pr" data-mxl="share">${ic('sheet')}مشاركة Excel</button><button class="pr" data-mpdf="share">${ic('share')}مشاركة PDF</button><button data-mxl="save">${ic('download')}حفظ Excel</button><button data-mpdf="save">${ic('download')}حفظ PDF</button></div></div>
  <details class="pinfo" data-id="__mset"${V.op.__mset?' open':''}><summary>${ic('gear')} إعدادات الصيانة والاستيراد</summary><div class="fm"><label>المنطقة في عنوان الكشف<input data-mc="region" value="${esc(C.cfg.region)}"></label><label>اسم المشرف<input data-mc="sup" value="${esc(C.cfg.sup)}"></label><button data-pick="mjson">${ic('upload')}استيراد صيانات من ملف (اللي Claude بيجهّزه)</button><input type="file" id="mjson" accept=".json,application/json" hidden></div></details>`}
@@ -35,7 +35,7 @@ function medHtml(){const d=V.me;if(!d)return '';const nos=[...new Set(DB.ph.map(
  ${pic('b',d.imb,'صور قبل')}${pic('a',d.ima,'صور بعد')}<input type="file" id="mimg" accept="image/*" multiple hidden></div>
  <div class="tt"><button class="pr big" data-msave="1">${ic('check')}حفظ</button><button data-mcancel="1">إلغاء</button>${MU().items.some(x=>x.id==d.id)?`<button data-mdel="1" style="color:var(--rd)">${ic('trash')}مسح</button>`:''}</div></div>`}
 function mSave(){const d=V.me;if(!/^\d{4}-\d{2}-\d{2}$/.test(d.dt||''))return alert('اختار التاريخ');if(!String(d.ph).trim())return alert('اكتب رقم الصيدلية');if(!d.ad&&!String(d.det).trim())return alert('اختار نوع الدعاية أو اكتب التفاصيل');const q=Math.round(+d.q||0);if(!(q>0))return alert('اكتب العدد');
- const x=Object.assign({},d,{q,ph:String(d.ph).trim(),det:String(d.det||'').trim(),at:d.at||nowIso()});const C=MU(),i=C.items.findIndex(y=>y.id==x.id);if(i>=0)C.items[i]=x;else C.items.push(x);C.cur=mQ(x.dt);sv();snd('ok');V.me=null;goV({v:'mnt',op:{},dr:{},q:V.q});toastT('✓ اتحفظت الصيانة')}
+ const x=Object.assign({},d,{q,ph:String(d.ph).trim(),det:String(d.det||'').trim(),at:d.at||nowIso()});const C=MU(),i=C.items.findIndex(y=>y.id==x.id);if(i>=0)C.items[i]=x;else C.items.push(x);C.cur=mQ(x.dt);sv();snd('ok');if(i<0)whMntOffer(x);V.me=null;goV({v:'mnt',op:{},dr:{},q:V.q});toastT('✓ اتحفظت الصيانة')}
 // ---- Excel (quarter, grouped by month) ----
 function mntXlsx(q){const C=MU(),L=mList(q),M=mQm(q);const W=xlW();const NAVY='0B1B33',GOLD='F2B705',ZEB='F5F7FA',MUTE='5B6B80',CARD='EEF2F7';
  const H=['م','التاريخ','رقم الصيدلية','المدينة','نوع العمل','نوع الدعاية','التفاصيل','المقاس (سم)','العدد','البيان (للمحاسب)','ملاحظات'];
@@ -94,7 +94,7 @@ function mntClick(d){
  if(d.mwork){V.me.work=d.mwork;render();return 1}
  if(d.msave){mSave();return 1}
  if(d.mcancel){V.me=null;goV({v:'mnt',op:{},dr:{},q:V.q});return 1}
- if(d.mdel){if(!confirm('تمسح البند ده؟'))return 1;const C=MU();C.items=C.items.filter(x=>x.id!=V.me.id);[...(V.me.imb||[]),...(V.me.ima||[])].forEach(k=>idbDel(k));sv();V.me=null;goV({v:'mnt',op:{},dr:{},q:V.q});toastT('✓ اتمسح');return 1}
+ if(d.mdel){if(!confirm('تمسح البند ده؟'))return 1;const C=MU();C.items=C.items.filter(x=>x.id!=V.me.id);(C.xd=C.xd||{})[V.me.id]=nowIso();[...(V.me.imb||[]),...(V.me.ima||[])].forEach(k=>idbDel(k));sv();V.me=null;goV({v:'mnt',op:{},dr:{},q:V.q});toastT('✓ اتمسح');return 1}
  if(d.mpic){V.mpk=d.mpic;const i=$('#mimg');if(i)i.click();return 1}
  if(d.mimgx){const[k,x]=[d.mimgx.slice(0,1),d.mimgx.slice(2)];const f=k=='b'?'imb':'ima';V.me[f]=(V.me[f]||[]).filter(y=>y!=x);render();return 1}
  if(d.mxl){mExport('x',d.mxl);return 1}if(d.mpdf){mExport('p',d.mpdf);return 1}
@@ -108,3 +108,4 @@ function mntChange(x){
  return 0}
 function mField(x){const d=V.me,k=x.dataset.mf;d[k]=x.value;if(k=='ph'){const p=mPh(x.value);if(p){if(!d.ct)d.ct=p.ct||'';if(d.ad&&!d.sz)d.sz=mSize(d.ad,x.value)}}if(k=='ad'){const z=mSize(d.ad,d.ph);if(z)d.sz=z}}
 document.addEventListener('input',e=>{const x=e.target;if(x.dataset&&x.dataset.mf&&V.me&&V.v=='med'&&x.tagName=='INPUT'){V.me[x.dataset.mf]=x.value;const b=document.querySelector('.ced .ph b');if(b&&x.dataset.mf!='ph')b.textContent=mStmt(V.me)||'—'}});
+

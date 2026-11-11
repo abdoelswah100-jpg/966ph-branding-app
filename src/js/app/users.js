@@ -1,7 +1,7 @@
 // ---------- users, permissions and collecting the supervisors' files ----------
 // Organisational separation only: the data stays readable on the device (no encryption, no server).
 const USEED=[['u1','عماد المزين','مدير عام',[],'all','none','own',0],['u2','هيثم أمان','مدير ومحاسب الشركة',[],'all','none','all',0],['u3','محمد ثابت','مدير ومشرف المنطقة الشرقية',['الشرقية'],'all','region','own',0],['u4','عبدالله السواح','مشرف المنطقة الوسطى ومسؤول البرنامج',['الوسطى (الرياض)'],'all','all','all',1],['u5','مجدي عواد','مشرف المنطقة الغربية',['الغربية'],'own','region','own',0],['u6','سعيد المحمدي','مشرف المنطقة الجنوبية',['الجنوبية'],'own','region','own',0],['u7','محمد المحمدي','مشرف المنطقة الشمالية',['الشمالية'],'own','region','own',0]];
-const UST=['cust','mnt','wh','wlog','invs','qi'],UKEY='u966';
+const UST=['cust','mnt','wh','wlog','invs','qi','rcvq','req'],UKEY='u966';
 let HID=[],HIDDB=null,STO=null,UBASE=null;
 const uSess=()=>{try{return JSON.parse(localStorage.getItem(UKEY)||'{}')}catch(e){return{}}},uSessSet=o=>{try{localStorage.setItem(UKEY,JSON.stringify(Object.assign(uSess(),o)))}catch(e){}};
 const UL=()=>DB.users||[],UBY=id=>UL().find(u=>u.id==id),U=()=>UBY(uSess().cur)||UL().find(u=>u.admin)||UL()[0]||{id:'',nm:'',regions:[],view:'all',edit:'all',docs:'all',admin:1};
@@ -11,6 +11,7 @@ const uSeeP=p=>uAll()||uOwnP(p);
 const uEditP=p=>{const u=U();return u.edit=='all'||(u.edit=='region'&&uOwnP(p,u))};
 const uRegOwner=rg=>{const L=UL().filter(u=>(u.regions||[]).includes(rg));return (L.find(u=>u.edit=='region')||L[0]||UL().find(u=>u.admin)||{}).id};
 const uName=id=>(UBY(id)||{}).nm||'';
+const uRegTitle=()=>{const r=(U().regions||[])[0];return r?'المنطقة '+r:'كل المناطق'};
 function uSetOwner(p){if(p.uid)return;p.uid=uRegOwner(p.rg)||U().id;const c=U();if(p.uid!=c.id&&c.edit=='region'&&!(p.ex||[]).includes(c.id))p.ex=(p.ex||[]).concat(c.id)}
 function uInit(){if(!DB)return;if(!Array.isArray(DB.users)||!DB.users.length){DB.users=USEED.map(([id,nm,title,regions,view,edit,docs,admin])=>({id,nm,title,regions,view,edit,docs,admin:!!admin,hide:false,pin:null,ov:{}}))}
  DB.uw=DB.uw||{};const ad=(UL().find(u=>u.admin)||UL()[0]).id;
@@ -25,8 +26,8 @@ function uApply(){const u=U();if(HIDDB===DB&&HID.length){DB.ph=DB.ph.concat(HID)
 function uLoadStore(id){if(STO===id){if(!DB.qi)DB.qi={quotes:[],invoices:[]};return}if(STO&&STO!==id){const w=DB.uw[STO]=DB.uw[STO]||{};UST.forEach(k=>{if(DB[k]!==undefined)w[k]=DB[k]})}STO=id;const w=DB.uw[id]=DB.uw[id]||{};UST.forEach(k=>{DB[k]=w[k]});if(!DB.qi)DB.qi={quotes:[],invoices:[]};DB.qi.quotes=DB.qi.quotes||[];DB.qi.invoices=DB.qi.invoices||[]}
 const uDiff=(a,b)=>{const o={};Object.keys(a||{}).forEach(k=>{if(JSON.stringify(a[k])!==JSON.stringify((b||{})[k]))o[k]=a[k]});return o};
 // the object that gets saved: every pharmacy, every user's stores, the base settings
-function dbOut(){if(!DB.users)return DB;const o=Object.assign({},DB),u=U();o.ph=DB.ph.concat(HIDDB===DB?HID:[]);const uw=Object.assign({},DB.uw);if(STO){uw[STO]=Object.assign({},uw[STO]);UST.forEach(k=>{if(DB[k]!==undefined)uw[STO][k]=DB[k]})}o.uw=uw;UST.forEach(k=>delete o[k]);
- if(UBASE&&UBASE.db===DB&&!u.admin){o.users=DB.users.map(x=>x.id==u.id?Object.assign({},x,{ov:{sz:uDiff(DB.cfg.sz,UBASE.sz),pl:uDiff(DB.pl,UBASE.pl)}}):x);o.cfg=Object.assign({},DB.cfg,{sz:UBASE.sz});o.pl=UBASE.pl}else if(UBASE&&UBASE.db===DB){UBASE.sz=DB.cfg.sz;UBASE.pl=DB.pl}
+function dbOut(){if(!DB.users)return DB;const o=Object.assign({},DB),u=U();o.ph=DB.ph.concat(HIDDB===DB?HID:[]);o.ph.forEach(uSetOwner);const uw=Object.assign({},DB.uw);if(STO){uw[STO]=Object.assign({},uw[STO]);UST.forEach(k=>{if(DB[k]!==undefined)uw[STO][k]=DB[k]})}o.uw=uw;UST.forEach(k=>delete o[k]);
+ if(UBASE&&UBASE.db===DB&&!u.admin){const me=DB.users.find(x=>x.id==u.id);if(me)me.ov={sz:uDiff(DB.cfg.sz,UBASE.sz),pl:uDiff(DB.pl,UBASE.pl)};o.users=DB.users;o.cfg=Object.assign({},DB.cfg,{sz:UBASE.sz});o.pl=UBASE.pl}else if(UBASE&&UBASE.db===DB){UBASE.sz=DB.cfg.sz;UBASE.pl=DB.pl}
  return o}
 const uStoreRO=()=>STO&&STO!==U().id&&!uAdmin();
 function uOvN(u){const o=u.ov||{};return Object.keys(o.sz||{}).length+Object.keys(o.pl||{}).length}
@@ -85,6 +86,7 @@ function usrClick(d,b){
  if(d.uova||d.uovx){const u=UBY(d.uova||d.uovx);if(!u)return 1;if(d.uova){if(!confirm('اعتماد تعديلات '+u.nm+' في الإعدادات للكل؟'))return 1;Object.assign(UBASE.sz,(u.ov||{}).sz||{});Object.assign(UBASE.pl,(u.ov||{}).pl||{});DB.cfg.sz=UBASE.sz;DB.pl=UBASE.pl}u.ov={};sv();uApply();render();toastT('✓ تم');return 1}
  if(d.usetup){const o=uSetupFile(d.usetup),n='966-setup-'+uName(d.usetup).replace(/\s+/g,'-')+'.json';sav(n,JSON.stringify(o),'application/json');return 1}
  if(d.uexp){const o=uMyFile(),n='966-work-'+U().nm.replace(/\s+/g,'-')+'-'+TD()+'.966sup.json';sav(n,JSON.stringify(o),'application/json');return 1}
+ if(d.uex){const p=curP();if(!p||!uEditP(p))return 1;const L=p.ex=p.ex||[],i=L.indexOf(d.uex);if(i>=0)L.splice(i,1);else L.push(d.uex);sv();render();return 1}
  if(d.ust){if(!uAll())return 1;uLoadStore(d.ust||U().id);render();return 1}
  return 0}
 function usrChange(x){
@@ -99,13 +101,16 @@ document.addEventListener('keydown',e=>{if(e.key=='Enter'&&e.target&&e.target.id
 // whose custody / maintenance / warehouse / quotes are shown (managers can look at the others)
 const uStoreBar=()=>uAll()&&UL().length>1?`<div class="ustb"><label>بيانات<select id="ustsel">${UL().map(u=>`<option value="${u.id}"${u.id==STO?' selected':''}>${esc(u.nm)}${u.id==U().id?' (أنا)':''}</option>`).join('')}</select></label>${uStoreRO()?'<small>👁 للعرض فقط</small>':''}</div>`:'';
 // edits that a user without the right cannot do
-const PHEDIT=['add','del','ed','rep','fo','tk','tf','tkt','tkall','tkclr','whdone','cpy','rm','ws10','an','stp','swap','ratr','xs','xr','pick'];
-const STEDIT=['csave','cdel','cman','cscan','cnew','cnewgo','calt','cimgx','cpic','msave','mdel','madd','mrep','mpic','mimgx','whst','whsave','whdel','whadd','whinv','invok','whgo','whpull','pk','docsave','docdel'];
-function uGuardClick(d,b){const v=V.v;if(['ph','qe','exec','sum','wht','xr','rev'].includes(v)){const p=curP();if(p&&!uEditP(p)&&Object.keys(d).some(k=>PHEDIT.includes(k))){toastT('👁 الصيدلية دي للعرض بس');return 1}}
+const PHEDIT=['qc','tcx','rcdel','rcaok','cdz','whfrom','whf2','rreq','sxpull','add','del','ed','rep','fo','tk','tf','tkt','tkall','tkclr','whdone','cpy','rm','ws10','an','stp','swap','ratr','xs','xr','pick'];
+const STEDIT=['rqsave','rqdel','rqmnt','rqst','rqphx','whcap','whr','wrsave','wha','whaok','csave','cdel','cman','cscan','cnew','cnewgo','calt','cimgx','cpic','msave','mdel','madd','mrep','mpic','mimgx','whst','whsave','whdel','whadd','whinv','invok','whgo','whpull','pk','docsave','docdel'];
+function uGuardClick(d,b){const v=V.v;if(d.cpy||d.rm){const q=DB.ph.find(x=>x.id==(d.cpy||d.rm));if(q&&!uEditP(q)){toastT('👁 الصيدلية دي للعرض بس');return 1}}if(['ph','qe','exec','sum','wht','xr','rev','rcv'].includes(v)){const p=curP();if(p&&!uEditP(p)&&Object.keys(d).some(k=>PHEDIT.includes(k))){toastT('👁 الصيدلية دي للعرض بس');return 1}}
  if(['cust','ced','mnt','med','wh','whe','inv','docs'].includes(v)&&uStoreRO()&&!(v=='docs'&&U().docs=='all')&&Object.keys(d).some(k=>STEDIT.includes(k))){toastT('👁 بيانات مستخدم تاني — للعرض بس');return 1}
+ if(v=='wha'&&uStoreRO()&&Object.keys(d).some(k=>PHEDIT.includes(k))){toastT('👁 بيانات مستخدم تاني — للعرض بس');return 1}
  if(d.newp&&U().edit=='none'){toastT('👁 صلاحيتك عرض وتصدير بس');return 1}
  return 0}
-function uGuardChange(x){const v=V.v;if(!x.closest||!x.closest('main'))return 0;if(['ph','qe','exec','wht','xr'].includes(v)||(v=='sum'&&x.dataset&&x.dataset.tv)||(v=='rev'&&x.id=='rvst')){const p=curP();if(p&&!uEditP(p)){toastT('👁 الصيدلية دي للعرض بس');render();return 1}}
+function uGuardChange(x){const v=V.v;if(!x.closest||!x.closest('main'))return 0;if(['ph','qe','exec','wht','xr'].includes(v)||((v=='sum'||v=='rcv')&&x.dataset&&x.dataset.tv)||(v=='rev'&&x.id=='rvst')){const p=curP();if(p&&!uEditP(p)){toastT('👁 الصيدلية دي للعرض بس');render();return 1}}
  if(['cust','ced','mnt','med','wh','whe','inv'].includes(v)&&uStoreRO()&&x.id!='ustsel'&&x.id!='cmosel'&&x.id!='mqsel'&&!(x.dataset&&x.dataset.whf)&&x.id!='whq'&&x.id!='whlow'){toastT('👁 بيانات مستخدم تاني — للعرض بس');render();return 1}return 0}
 const uRoBanner=p=>p&&!uEditP(p)?`<div class="ywarn">👁 للعرض فقط — صيدلية ${esc(uName(p.uid)||'مشرف تاني')}${(p.ex||[]).length?' · منفذ: '+esc(p.ex.map(uName).join('، ')):''}</div>`:'';
 const uExHtml=p=>{const L=UL().filter(u=>u.edit!='none'&&u.id!=p.uid);return `<label>المشرف المسؤول<input value="${esc(uName(p.uid))}" disabled></label><label>منفذين إضافيين (لو مشرف غطّى الصيدلية)</label><div class="mwk">${L.map(u=>`<button class="${(p.ex||[]).includes(u.id)?'on':''}" style="--wc:#DDF1E4" data-uex="${u.id}">${esc(u.nm)}</button>`).join('')}</div>`};
+
+const uAllSt=k=>[DB[k]].concat(Object.keys(DB.uw||{}).filter(id=>id!==STO).map(id=>(DB.uw[id]||{})[k]));
