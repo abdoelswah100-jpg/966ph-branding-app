@@ -48,6 +48,7 @@ js/updates/v3.6.js
 js/updates/v3.7.js
 js/updates/v3.8.js
 js/updates/v3.9.js
+js/updates/v1.2.js
 js/app/extras-v1.5.js
 js/app/users.js
 js/app/pdf-and-start.js

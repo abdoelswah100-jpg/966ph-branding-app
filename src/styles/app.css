@@ -593,4 +593,4 @@ details.more>summary{font-size:14px;color:var(--pb)}
 .look .opt button.on{background:#12305C;color:#fff;border-color:#12305C}
 .toast.rem{bottom:150px}
 @media print{.hmenu,.mshade,.rvbar,.obar,details.more,.sbar,button.hmb{display:none!important}}
-.wimpbad{color:#B45309}
+.wimpbad{color:#B45309}.winew{color:#1D4ED8}.wimpdup{color:#B91C1C}
