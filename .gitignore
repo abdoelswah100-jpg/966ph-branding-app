@@ -5,3 +5,4 @@ www/fonts/
 dist/
 tests/fixtures/
 tests/s*/
+__pycache__/
