@@ -6,7 +6,7 @@ function xnApply(){const X=(DB&&DB.cfg&&DB.cfg.xn)||{},set=(a,b,add)=>{a.length=
  Object.keys(XNB.EC).forEach(k=>set(EC[k],XNB.EC[k],X['ec:'+k]));set(EG,XNB.EG,X.eg);set(MED,XNB.MED,X.md);set(GAL,XNB.GA,X.ga)}
 const xnKey=(tid,d)=>tid=='ga'?'ga':tid=='ec'?'ec:'+d.sec:tid=='eg'?'eg':tid=='md'||(tid=='fh'&&d.sec=='Medicated')?'md':'nm:'+d.sec;
 const XNL=k=>k=='ga'?'ضفها للسلة':k=='eg'?'End gandola':k=='md'?'Medicated':/^ec:/.test(k)?'End cap · '+k.slice(3):'Floor / Wall Header · '+k.slice(3);
-function xnNew(tid){const t=T.find(x=>x.id==tid),q=curP(),sh=q?q.sh:0;if(!t)return;const d=draft(t,sh);if(tid=='wh'&&wood(d))return alert('مسميات الخشب ثابتة. غيّر النوع لـ WALL NORMAL الأول.');
+function xnNew(tid){const t=T.find(x=>x.id==tid),q=curP(),sh=q?q.sh:0;if(!t)return;const d=draft(t,sh);
  const key=xnKey(tid,d),sp=tid=='eg'?String(d.nm||'Personal · ').split(' · ')[0]:'',ex=tid=='ga'?'عروض رمضان':tid=='ec'?'Sun care · واقي الشمس':tid=='eg'?'Hair care · عناية بالشعر':key=='md'?'La Roche-Posay':'Sun care';
  let v=prompt(`مسمى جديد لـ ${t.n} · ${tid=='ga'?'(اسم الجندولة)':tid=='eg'?'قسم '+sp:key=='md'?'Medicated':'قسم '+(d.sec||'')}\nاكتبه بالشكل: ${ex}${tid=='eg'?'\n(لقسم تاني: اختار مسمى من القسم ده الأول)':''}`,'');if(v==null)return;v=v.replace(/\s+/g,' ').trim();if(!v)return;if(tid=='eg'&&!v.startsWith(sp+' · '))v=sp+' · '+v;
  const f=t.f.find(x=>x.k=='nm'),L=opts(f,d,sh),hit=L.find(x=>x.toLowerCase()==v.toLowerCase());if(hit){d.nm=hit;render();return toastT('المسمى ده موجود، واتختار')}
