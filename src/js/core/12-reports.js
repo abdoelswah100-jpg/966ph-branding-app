@@ -4,7 +4,7 @@ const EGR=/Header (\S+) \((.+?)\) ×\d+ \+ Side (\S+) \((.+?)\) ×\d+/;
 function sizeRows(P){const m={},ord=[];function k(n,sz,mat,q,a,ty,lm,st){const key=n+'|'+sz+'|'+mat+(st!=null?'|'+st:'');if(!m[key]){m[key]={n,sz,mat,q:0,a:0,lm:0,ty:ty||n};if(st!=null)m[key].st=st;ord.push(key)}m[key].q+=q;m[key].a+=a||0;m[key].lm+=lm||0}
  for(const p of P)for(const t of TY(p)){
   for(const r of p.rows[t.id]||[]){const q=r.q!=null?+r.q:1,z=t.z(r,p.sh);
-   if(t.id=='ga'){GAP.forEach(([n,f,z])=>k(GAN+' - '+n,z,GAM,f*q,0,t.n));continue}
+   if(t.id=='ga'){GAP.forEach(([n,f,z])=>k(GAN+' - '+n+gaX(r),z,GAM,f*q,0,t.n));continue}
    if(t.id=='eg'){const x=egAO(r,p.sh)?null:egSz(r,p.sh);if(x){if(egFh(r))k('End gandola - Header',x.h,x.hm,egRd(egFh(r)*q));if(egFs(r))k('End gandola - Side',x.sd,x.sm,egRd(egFs(r)*q));if(egFa(r))k('End gandola - Side Acrylic',x.sd,'أكريليك',egRd(egFa(r)*q))}if(/Acrylic Pocket/.test(z))SDS.forEach(([sd,n])=>{const c=egN(r,p.sh,sd);if(c)k('Side Acrylic Pocket',n,'أكريليك',c)});continue}
    if(t.id=='al'){if(r.pc)k(t.n,'قطع أكريليك 30×30','اكرليك',q,0,t.n,0);else k(t.n,`${r.lh||'—'} ارتفاع الحروف`,'اكرليك',q);continue}
    if(t.id=='fr'){k(t.n+' - '+(r.kd||'—'),szOf(z),mtOf(z),q,0,t.n);continue}
@@ -25,7 +25,7 @@ function managementReportRows(P0){
 }
 function gTot(ty,L){const q=L.reduce((a,x)=>a+(+x.q||0),0);
  if(ty=='Wall Header')return n2(L.reduce((a,x)=>a+(x.lm||0),0))+' م';
- if(ty==GAN)return 'سايد '+L.filter(x=>/سايد$/.test(x.n)).reduce((a,x)=>a+x.q,0)+' · هيدر '+L.filter(x=>/هيدر$/.test(x.n)).reduce((a,x)=>a+x.q,0);
+ if(ty==GAN)return 'سايد '+L.filter(x=>/ - سايد/.test(x.n)).reduce((a,x)=>a+x.q,0)+' · هيدر '+L.filter(x=>/ - هيدر/.test(x.n)).reduce((a,x)=>a+x.q,0);
  if(ty=='Wall Sticker')return L.reduce((a,x)=>a+(x.a||0),0).toFixed(2)+' م²';
  if(ty=='Medicated')return 'Header '+L.filter(x=>/Header$/.test(x.n)).reduce((a,x)=>a+x.q,0)+' · Side '+L.filter(x=>/Side$/.test(x.n)).reduce((a,x)=>a+x.q,0);
  if(/^Acrylic letters/.test(ty)){const pc=L.filter(x=>/30×30/.test(x.sz)).reduce((a,x)=>a+x.q,0);return (q-pc)+' قطعة'+(pc?' · قطع 30×30: '+pc:'')}

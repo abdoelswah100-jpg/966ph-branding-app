@@ -1,14 +1,14 @@
 // ---------- v3.3: custom names ----------
-const XNT=['ec','md','fh','wh','eg'];
-const XNB={NM:Object.fromEntries(Object.entries(NM).map(([k,v])=>[k,v.slice()])),EC:Object.fromEntries(Object.entries(EC).map(([k,v])=>[k,v.slice()])),EG:EG.slice(),MED:MED.slice()};
+const XNT=['ec','md','fh','wh','eg','ga'];
+const XNB={NM:Object.fromEntries(Object.entries(NM).map(([k,v])=>[k,v.slice()])),EC:Object.fromEntries(Object.entries(EC).map(([k,v])=>[k,v.slice()])),EG:EG.slice(),MED:MED.slice(),GA:GAL.slice()};
 function xnApply(){const X=(DB&&DB.cfg&&DB.cfg.xn)||{},set=(a,b,add)=>{a.length=0;b.forEach(v=>a.push(v));(add||[]).forEach(v=>{if(v&&!a.includes(v))a.push(v)})};
  Object.keys(XNB.NM).forEach(k=>set(NM[k],XNB.NM[k],X['nm:'+k]));Object.keys(X).forEach(k=>{if(/^nm:/.test(k)&&!XNB.NM[k.slice(3)])NM[k.slice(3)]=X[k].slice()});
- Object.keys(XNB.EC).forEach(k=>set(EC[k],XNB.EC[k],X['ec:'+k]));set(EG,XNB.EG,X.eg);set(MED,XNB.MED,X.md)}
-const xnKey=(tid,d)=>tid=='ec'?'ec:'+d.sec:tid=='eg'?'eg':tid=='md'||(tid=='fh'&&d.sec=='Medicated')?'md':'nm:'+d.sec;
-const XNL=k=>k=='eg'?'End gandola':k=='md'?'Medicated':/^ec:/.test(k)?'End cap · '+k.slice(3):'Floor / Wall Header · '+k.slice(3);
+ Object.keys(XNB.EC).forEach(k=>set(EC[k],XNB.EC[k],X['ec:'+k]));set(EG,XNB.EG,X.eg);set(MED,XNB.MED,X.md);set(GAL,XNB.GA,X.ga)}
+const xnKey=(tid,d)=>tid=='ga'?'ga':tid=='ec'?'ec:'+d.sec:tid=='eg'?'eg':tid=='md'||(tid=='fh'&&d.sec=='Medicated')?'md':'nm:'+d.sec;
+const XNL=k=>k=='ga'?'ضفها للسلة':k=='eg'?'End gandola':k=='md'?'Medicated':/^ec:/.test(k)?'End cap · '+k.slice(3):'Floor / Wall Header · '+k.slice(3);
 function xnNew(tid){const t=T.find(x=>x.id==tid),q=curP(),sh=q?q.sh:0;if(!t)return;const d=draft(t,sh);if(tid=='wh'&&wood(d))return alert('مسميات الخشب ثابتة. غيّر النوع لـ WALL NORMAL الأول.');
- const key=xnKey(tid,d),sp=tid=='eg'?String(d.nm||'Personal · ').split(' · ')[0]:'',ex=tid=='ec'?'Sun care · واقي الشمس':tid=='eg'?'Hair care · عناية بالشعر':key=='md'?'La Roche-Posay':'Sun care';
- let v=prompt(`مسمى جديد لـ ${t.n} · ${tid=='eg'?'قسم '+sp:key=='md'?'Medicated':'قسم '+(d.sec||'')}\nاكتبه بالشكل: ${ex}${tid=='eg'?'\n(لقسم تاني: اختار مسمى من القسم ده الأول)':''}`,'');if(v==null)return;v=v.replace(/\s+/g,' ').trim();if(!v)return;if(tid=='eg'&&!v.startsWith(sp+' · '))v=sp+' · '+v;
+ const key=xnKey(tid,d),sp=tid=='eg'?String(d.nm||'Personal · ').split(' · ')[0]:'',ex=tid=='ga'?'عروض رمضان':tid=='ec'?'Sun care · واقي الشمس':tid=='eg'?'Hair care · عناية بالشعر':key=='md'?'La Roche-Posay':'Sun care';
+ let v=prompt(`مسمى جديد لـ ${t.n} · ${tid=='ga'?'(اسم الجندولة)':tid=='eg'?'قسم '+sp:key=='md'?'Medicated':'قسم '+(d.sec||'')}\nاكتبه بالشكل: ${ex}${tid=='eg'?'\n(لقسم تاني: اختار مسمى من القسم ده الأول)':''}`,'');if(v==null)return;v=v.replace(/\s+/g,' ').trim();if(!v)return;if(tid=='eg'&&!v.startsWith(sp+' · '))v=sp+' · '+v;
  const f=t.f.find(x=>x.k=='nm'),L=opts(f,d,sh),hit=L.find(x=>x.toLowerCase()==v.toLowerCase());if(hit){d.nm=hit;render();return toastT('المسمى ده موجود، واتختار')}
  const X=DB.cfg.xn=DB.cfg.xn||{};(X[key]=X[key]||[]).push(v);xnApply();d.nm=v;sv();render();toastT('✓ اتضاف المسمى: '+v)}
 function xnMgHtml(){const X=DB.cfg.xn||{},K=Object.keys(X).filter(k=>(X[k]||[]).length);return `<h3>المسميات المضافة</h3><small>بتتضاف من قائمة «المسمى» ← «➕ مسمى جديد». لو مسحت مسمى، البنود المسجّلة بيه بتفضل زي ما هي.</small><div class="sc"><table><tr><th>القائمة</th><th>المسمى</th><th>الإجراءات</th></tr>${K.length?K.map(k=>X[k].map((n,i)=>`<tr><td>${esc(XNL(k))}</td><td>${esc(n)}</td><td><button data-xned="${esc(k)}|${i}">تعديل</button> <button data-xndel="${esc(k)}|${i}">حذف</button></td></tr>`).join('')).join(''):'<tr><td colspan="3">لا توجد مسميات مضافة</td></tr>'}</table></div>`}

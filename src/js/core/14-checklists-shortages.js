@@ -26,7 +26,7 @@ function nqLines(p,k){const o=[];ckRows(p).forEach(x=>{if(x.r.cx)return;const r=
    if(egSub(r,p.sh))pks();return}
   if(d<=0)return;const z=t.z(r,p.sh),sc=t.id=='ab'?'':scOf(r),b={p,t,r,sec:sc};
   if(t.id=='md'){if(mdH(r))o.push({...b,nm:r.nm,pt:'Header',sz:SZ('md.h'),mat:SZ('mt.md'),q,v,d});if(mdS(r))o.push({...b,nm:r.nm,pt:'Side',sz:SZ('md.s')[rsh(r,p.sh)],mat:SZ('mt.md'),q,v,d});return}
-  if(t.id=='ga'){GAP.forEach(([n,f,z])=>o.push({...b,nm:'',pt:n,sz:z,mat:GAM,q:f*q,v:f*v,d:f*d}));return}
+  if(t.id=='ga'){GAP.forEach(([n,f,z])=>o.push({...b,nm:gaX(r)?gaNm(r):'',pt:n,sz:z,mat:GAM,q:f*q,v:f*v,d:f*d}));return}
   const nm=t.id=='so'?son(r):t.id=='ab'?abNm(r):r.nm||r.it||r.kd||'',sz=t.id=='ws'?`${r.h}×${r.w}`:t.id=='ab'?ABV(r.it)[0]:t.id=='al'?(r.pc?'30×30':`${r.lh||'—'} حروف · ${r.h||'—'}×${r.w||'—'}`):szOf(z),mat=t.id=='ab'?ABV(r.it)[1]:t.id=='al'?SZ('mt.al'):mtOf(z);
   o.push({...b,nm,pt:'',sz,mat:t.id=='fh'&&p.rol?mat+' · 🖨 اطبع على رولاند':mat,sd:r.sd||'',stt:t.id=='ab'?stD(r.stt):'',q,v,d})});return o}
 const nqHasNm=x=>!!(x.nm||x.pt);

@@ -28,4 +28,4 @@ const T=[
 {id:'cm',n:'Camera sticker',max:1,zero:1,cap:1,f:[num('q','العدد (0 أو 1)')],z:r=>`A5 · ${r.q}`,nq:1},
 {id:'md',n:'Medicated',nq:1,f:[sel('nm','المسمى',()=>MED),sel('mdp','المطلوب',()=>MDP),num('q','العدد')],z:(r,s)=>`${r.nm} · `+[mdH(r)?`Header ${SZ('md.h')} سم (${SZ('mt.md')}) ×${r.q}`:'',mdS(r)?`Side ${SZ('md.s')[s]} سم (${SZ('mt.md')}) ×${r.q}`:''].filter(Boolean).join(' + ')},
 {id:'ab',n:'Acrylic boards',f:[sel('it','البند',()=>ABI),Object.assign(sel('an','اسم اللوحة',()=>['غير محدد',...ABN]),{hide:d=>d.it!=ABA3}),Q,sel('stt','الحالة',()=>['تركيب فقط','تصنيع وتركيب'])],z:r=>`${abNm(r)} · ${ABV(r.it).join(' · ')} · ${stD(r.stt)}`}];
-T.push({id:'ga',n:'ضفها للسلة',nq:1,f:[num('q','عدد الجندولات')],z:r=>{const q=+r.q||0;return GAP.map(([n,f,z])=>`${n} ${z} سم (${GAM}) ×${f*q}`).join(' + ')}});
+T.push({id:'ga',n:'ضفها للسلة',nq:1,f:[sel('nm','المسمى',()=>GAL),num('q','عدد الجندولات')],z:r=>{const q=+r.q||0;return (gaX(r)?gaNm(r)+' · ':'')+GAP.map(([n,f,z])=>`${n} ${z} سم (${GAM}) ×${f*q}`).join(' + ')}});

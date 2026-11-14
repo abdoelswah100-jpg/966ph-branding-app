@@ -20,7 +20,7 @@ const wiK0=o=>[o.sh,o.ty,nk(o.sec),nk(o.mat),String(o.size||'').replace(/\s+/g,'
 const wiBase=x=>x.rol?Object.assign({},x,{mat:String(x.mat||'').replace(ROLM,'')}):x;
 let WCL=null;const wiCat=()=>WCL||(WCL=whCatalog());
 // the list a new name goes to (the same lists as «➕ مسمى جديد»)
-const wiXK=x=>/^Medicated - /.test(x.ty)?'md':x.ty=='End cap'?'ec:'+x.sec:(x.ty=='Floor Header'||x.ty=='Wall Header')?(x.sec=='Medicated'?'md':'nm:'+x.sec):'';
+const wiXK=x=>/^ضفها للسلة - /.test(x.ty)?'ga':/^Medicated - /.test(x.ty)?'md':x.ty=='End cap'?'ec:'+x.sec:(x.ty=='Floor Header'||x.ty=='Wall Header')?(x.sec=='Medicated'?'md':'nm:'+x.sec):'';
 // same item as the app has, only the name is new
 function wiNew(x){if(!x.nm||x.old||whImpOk(x))return '';const k=wiXK(x);if(!k||(/^ec:|^nm:/.test(k)&&!x.sec))return '';const o=wiBase(x),k0=wiK0(o);return wiCat().some(c=>wiK0(c)==k0)?k:''}
 // the name differs only in spaces / dots / capitals: take the app's name

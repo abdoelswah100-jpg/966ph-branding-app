@@ -13,7 +13,7 @@ function whAdd(o,qty,typ,src,note){const k=whKey(o);let x=whFind(k);if(!x){x=Obj
 function whParts(t,r,s){if(WXT.includes(t.id)||t.auto)return [];const sh=rsh(r,s),z=t.z(r,s),sec=scOf(r),nm=r.nm||r.it||r.kd||'',L=[];
  if(t.id=='eg'){const m=egAO(r,s)?null:egSz(r,s);if(m){const sn=egSN(r,sh);if(egFh(r))L.push({ty:'End gandola - Header',nm,sec,size:m.h,mat:m.hm,f:egFh(r),ep:'h'});if(egFs(r))L.push({ty:'End gandola - Side',nm:sn?sn.nm:nm,sec:sn?sn.sec:sec,size:m.sd,mat:m.sm,f:egFs(r),ep:'s'});if(egFa(r))L.push({ty:'End gandola - Side Acrylic',nm:sn?sn.nm:nm,sec:sn?sn.sec:sec,size:m.sd,mat:'أكريليك',f:egFa(r),ep:'a'})}if(/Acrylic Pocket/.test(z)){const n=qn(r);SDS.forEach(([sd,nm2])=>{const c=egN(r,s,sd);if(c)L.push({ty:'Side Acrylic Pocket',nm:'',sec:'',size:nm2,mat:'أكريليك',f:n?c/n:0,pk:sd})})}}
  else if(t.id=='md'){if(mdH(r))L.push({ty:'Medicated - Header',nm,sec,size:String(SZ('md.h')),mat:SZ('mt.md'),f:1});if(mdS(r))L.push({ty:'Medicated - Side',nm,sec,size:String(SZ('md.s')[sh]),mat:SZ('mt.md'),f:1})}
- else if(t.id=='ga')GAP.forEach(([n,f,zz])=>L.push({ty:GAN+' - '+n,nm:'',sec:'',size:zz,mat:GAM,f}));
+ else if(t.id=='ga')GAP.forEach(([n,f,zz])=>L.push({ty:GAN+' - '+n,nm:gaNm(r),sec:'',size:zz,mat:GAM,f}));
  else if(t.id=='wh'){L.push({ty:t.n,nm,sec,size:wood(r)?(r.len||'')+'':szOf(z),mat:mtOf(z),f:wood(r)?1:(+r.len||0)/100})}
  else if(t.id=='al'){L.push(r.pc?{ty:t.n,nm:'قطع 30×30',sec:r.sec,size:'30×30',mat:SZ('mt.al'),f:1}:{ty:t.n,nm:'',sec:r.sec,size:`حروف ${r.lh||'—'} سم · عرض ${r.w||'—'} سم`,mat:SZ('mt.al'),f:1})}
  else if(t.id=='ws'){L.push({ty:t.n,nm:r.kd||'',sec:r.sec,size:`${r.h}×${r.w}`,mat:SZ('mt.ws'),f:1})}
@@ -40,7 +40,7 @@ function whTake0(p,t,r,L,note){L.M.forEach(y=>{if(L.nm>0)whTakeQ(y,L.nm*y.f,'ph:
  if(L.nm>0){r.wf=(+r.wf||0)+L.nm;r.r=Math.min(qn(r),(+r.r||0)+L.nm)}const ne=egExTake(p,r,L,note);return L.nm+L.np+ne}
 // take from the warehouse for an item already in the pharmacy (what is not received yet); letters: any stock of the same section
 function whFromOpts(p,t,r){if(!p||p._wh||p._rc||!WU().length)return [];const need=Math.max(0,qn(r)-(+r.r||0)),o=rolOpts(p,t,r);const L=whRowPlan(t,r,p.sh);
- if(L&&need>0&&L.nm>0)o.push({k:'x',n:Math.min(need,L.nm),txt:`${Math.min(need,L.nm)} ${L.lab||(['eg','md'].includes(t.id)?'هيدر وسايد':'قطعة')} (نفس المقاس)${whXT(t,r,p.sh,Math.min(need,L.nm))}`});
+ if(L&&need>0&&L.nm>0)o.push({k:'x',n:Math.min(need,L.nm),txt:`${Math.min(need,L.nm)} ${L.lab||(['eg','md'].includes(t.id)?'هيدر وسايد':t.id=='ga'?'طقم (جندولة)':'قطعة')} (نفس المقاس)${whXT(t,r,p.sh,Math.min(need,L.nm))}`});
  if(L&&L.np>0)o.push({k:'p',n:L.np,txt:whTxt({nm:0,np:L.np,nps:L.nps,K:L.K},t)});if(L&&need>0&&egExN(L.ex))o.push({k:'e',n:egExN(L.ex),txt:egExT(L.ex)+(L.exAll?'':' — والباقي يتسجل نقص')+egExXT(L)});
  if(t.id=='al'&&!r.pc&&need>0){const key=L&&L.M[0]?whKey(L.M[0]):'';WU().filter(x=>x.ty==t.n&&x.sec==r.sec&&+x.qty>=1&&whKey(x)!=key&&x.nm!='قطع 30×30').forEach(x=>o.push({k:'a',id:x.id,n:Math.min(need,Math.floor(+x.qty)),txt:`${Math.min(need,Math.floor(+x.qty))} من ${x.sec} · ${x.size} (في المخزن ${wq(x.qty)})`}))}
  return o.concat(whOldOpts(p,t,r))}
