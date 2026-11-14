@@ -53,6 +53,7 @@ js/updates/v1.3.js
 js/updates/v1.4.js
 js/updates/v1.5.js
 js/updates/v1.6.js
+js/updates/v1.7.js
 js/app/extras-v1.5.js
 js/app/users.js
 js/app/pdf-and-start.js
