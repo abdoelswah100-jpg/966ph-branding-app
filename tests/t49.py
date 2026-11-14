@@ -1,11 +1,11 @@
-# 1.5: «مقاس قريب» for every type — End gandola part by part, Floor Header, nothing for far sizes
+# 1.5 + 1.6 (warning when smaller): «مقاس قريب» for every type — End gandola part by part, Floor Header, nothing for far sizes
 import json
 from playwright.sync_api import sync_playwright
 W='/home/claude/work/';D=json.loads(open(W+'bk1106/data.json',encoding='utf-8').read())
 HN='Health · Health care · نهتم بصحتك'
 with sync_playwright() as pw:
   br=pw.chromium.launch();pg=br.new_page(viewport={'width':400,'height':860});E=[];pg.on('pageerror',lambda e:E.append(str(e)));pg.on('dialog',lambda x:x.accept())
-  pg.goto('file://'+W+'new15.html');pg.wait_for_timeout(300)
+  pg.goto('file://'+W+'new16.html');pg.wait_for_timeout(300)
   pg.evaluate("d=>{localStorage.clear();localStorage.setItem('ads',d)}",json.dumps(D,ensure_ascii=False));pg.reload();pg.wait_for_timeout(2500)
   out=lambda k,v:print(k,'=>',v)
   pg.evaluate("""HN=>{const I=(o)=>Object.assign({min:'',sec:'',nm:'',mat:'',m22:1,m38:1,m39:1},o);
@@ -29,4 +29,6 @@ with sync_playwright() as pw:
    DB.wh.push(I({id:5,sh:3,ty:y.ty,sec:y.sec,nm:y.nm,size:'12×53.5',mat:y.mat,qty:2}),I({id:6,sh:4,ty:y.ty,sec:y.sec,nm:y.nm,size:'12×57.5',mat:y.mat,qty:2}));sv()}""")
   out('fh part',pg.evaluate("_Y.ty+' '+_Y.size+' '+_Y.mat"))
   out('fh opts',pg.evaluate("whFromOpts(_P,T.find(t=>t.id=='fh'),_P.rows.fh[0]).map(o=>o.k+' '+o.n+' '+o.txt)"))
+  pg.evaluate("""HN=>{const I=(o)=>Object.assign({min:'',sec:'',nm:'',mat:'',m22:1,m38:1,m39:1},o);DB.wh.push(I({id:7,sh:0,ty:'End gandola - Header',sec:'Health',nm:HN,size:'61×22',mat:'باك لايت',qty:9}));DB.wh.find(x=>x.id==1).qty=0;_P.sh=3;_P.rows.eg=[{nm:HN,sz:'صغير',q:1}];sv()}""",HN)
+  out('ukraine opts',pg.evaluate(f"whFromOpts(_P,{T},_P.rows.eg[0]).map(o=>o.k+' '+o.n+' '+o.txt)"))
   out('errors',E);br.close()
