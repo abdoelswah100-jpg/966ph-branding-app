@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 W='/home/claude/work/';D=json.loads(open(W+'bk1106/data.json',encoding='utf-8').read())
 with sync_playwright() as pw:
   br=pw.chromium.launch();pg=br.new_page(viewport={'width':400,'height':860});E=[];pg.on('pageerror',lambda e:E.append(str(e)));pg.on('dialog',lambda x:x.accept())
-  pg.goto('file://'+W+'new18.html');pg.wait_for_timeout(300)
+  pg.goto('file://'+W+'new19.html');pg.wait_for_timeout(300)
   pg.evaluate("d=>{localStorage.clear();localStorage.setItem('ads',d)}",json.dumps(D,ensure_ascii=False));pg.reload();pg.wait_for_timeout(2500)
   out=lambda k,v:print(k,'=>',v)
   T="T.find(t=>t.id=='wh')"
