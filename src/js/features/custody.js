@@ -103,7 +103,7 @@ async function cScanN(){const B=MLK();try{const s=await B.isSupported();if(s&&s.
  const on=ev=>{const bs=ev?(ev.barcodes||(ev.barcode?[ev.barcode]:[])):[];for(const b of bs){const r=b&&(b.rawValue||b.displayValue);if(r){hit(r);break}}};
  CSC={stop,nat:1,shot:async()=>{await stop();cShotInput()},torch:async()=>{try{await B.toggleTorch()}catch(e){}},zoom:v=>{B.setZoomRatio({zoomRatio:+v}).catch(()=>{})}};
  try{await B.addListener('barcodesScanned',on)}catch(e){}try{await B.addListener('barcodeScanned',on)}catch(e){}
- try{await B.startScan({formats:['QR_CODE'],lensFacing:'BACK'})}catch(e){await stop();throw e}
+ try{await B.startScan({formats:['QR_CODE'],lensFacing:'BACK',resolution:2})}catch(e){await stop();throw e}
  try{const t=await B.isTorchAvailable();if(t&&t.available)o.querySelector('[data-ctorch]').hidden=false}catch(e){}
  try{const a=await B.getMinZoomRatio(),c=await B.getMaxZoomRatio();if(c&&a&&c.zoomRatio>a.zoomRatio){const r=o.querySelector('.czr');r.min=a.zoomRatio;r.max=Math.min(c.zoomRatio,8);r.value=a.zoomRatio;o.querySelector('.czm').hidden=false}}catch(e){}
  return true}

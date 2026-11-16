@@ -12,7 +12,7 @@ async function cScanG(){const B=MLK();if(!B||!B.scan)return false;
  try{const a=await B.isGoogleBarcodeScannerModuleAvailable();if(a&&a.available===false){const t=toast('<span>جاري تحميل قارئ Google لأول مرة… (محتاج نت)</span>');let ok=false;
    try{await B.installGoogleBarcodeScannerModule();for(let i=0;i<45&&!ok;i++){await new Promise(r=>setTimeout(r,2000));try{ok=!!(await B.isGoogleBarcodeScannerModuleAvailable()).available}catch(e){}}}catch(e){console.warn('gms install',e)}finally{t.remove()}
    if(!ok){toastT('⚠ قارئ Google ما اتحمّلش، هيشتغل القارئ العادي');return false}}}catch(e){}
- let R;try{R=await B.scan({formats:['QR_CODE']})}catch(e){const m=String(e&&e.message||e);if(/cancel/i.test(m))return true;console.warn('gms scan',e);return false}
+ let R;try{R=await B.scan({formats:['QR_CODE'],autoZoom:true})}catch(e){const m=String(e&&e.message||e);if(/cancel/i.test(m))return true;console.warn('gms scan',e);return false}
  const L=(R&&R.barcodes)||[];for(const b of L){const raw=b.rawValue||b.displayValue||'',z=zatca(raw);if(z){CLR=raw;cAfterScan(z,null);return true}}
  if(L.length){if(confirm('⚠ الكود اللي اتقرا مش كود فاتورة ضريبية.\nتجرّب تاني؟'))return cScanG();return true}
  return true}

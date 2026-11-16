@@ -21,7 +21,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - name: Install packages
         run: npm install --no-audit --no-fund --legacy-peer-deps --loglevel=error 2>&1 | tee npm-install.log; test ${PIPESTATUS[0]} -eq 0
