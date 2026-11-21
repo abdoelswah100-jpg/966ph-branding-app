@@ -594,3 +594,12 @@ details.more>summary{font-size:14px;color:var(--pb)}
 .toast.rem{bottom:150px}
 @media print{.hmenu,.mshade,.rvbar,.obar,details.more,.sbar,button.hmb{display:none!important}}
 .wimpbad{color:#B45309}.winew{color:#1D4ED8}.wimpdup{color:#B91C1C}
+/* 2.4: rows wrap on the phone — long notes never widen the page */
+.rw{flex-wrap:wrap;min-width:0}.rw>span:first-child{flex:1 1 220px;min-width:0;overflow-wrap:anywhere;word-break:break-word}
+.rw .bt{display:flex;flex-wrap:wrap;gap:4px;justify-content:flex-end;margin-inline-start:auto}
+.rshc{white-space:normal;max-width:100%;overflow-wrap:anywhere}
+.rw em{overflow-wrap:anywhere}
+@media (max-width:560px){.rw{flex-direction:column;align-items:stretch}.rw>span:first-child{flex:none}.rw .bt{justify-content:flex-start;margin-inline-start:0}}
+.rshc.hkt{background:#FDE2E2;color:#8B0000;border-color:#F3B5B5}.rshc.swt{background:#EDE4FB;color:#4B2A8A;border-color:#CDB8F2}
+.swp{border:1px solid var(--bd);border-radius:10px;padding:8px;margin:6px 0;display:grid;gap:4px}.swp .tt{margin:4px 0 0}
+.stp{min-width:0;max-width:100%}.stp input{min-width:0;width:0}

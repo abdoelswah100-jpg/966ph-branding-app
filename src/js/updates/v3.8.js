@@ -5,7 +5,7 @@ const abUntouched=a=>(a||[]).every(r=>!r.r&&!r.x&&!r.nt&&!r.xi&&!r.wf);
 function abModCh(p,a,b){if(!p||a==b)return 0;const R=p.rows=p.rows||{},cur=R.ab||[];if(!abUntouched(cur)||abSig(cur)!=abSig(ABD(a)))return 0;R.ab=ABD(b);if(!R.ab.length)delete R.ab;return 1}
 
 // management report: one line for Fridge sticker and for Acrylic board A3 (the kinds / names are for the work, not the report)
-function mgMerge(L){const o=[],m={};L.forEach(x=>{const n=x.ty=='Fridge sticker'?'Fridge sticker':String(x.n).startsWith(ABA3+' · ')?ABA3:x.n;if(n==x.n){o.push(x);return}const k=n+'|'+x.sz+'|'+x.mat+'|'+(x.st||'');if(!m[k]){m[k]=Object.assign({},x,{n,q:0,a:0,lm:0});o.push(m[k])}m[k].q+=x.q;m[k].a+=x.a||0;m[k].lm+=x.lm||0});return o}
+function mgMerge(L){const o=[],m={};L.forEach(x=>{const n=x.ty=='Fridge sticker'?'Fridge sticker':String(x.n).startsWith(ABA3+' · ')?ABA3:String(x.n).startsWith(ABA4+' · ')?ABA4:x.n;if(n==x.n){o.push(x);return}const k=n+'|'+x.sz+'|'+x.mat+'|'+(x.st||'');if(!m[k]){m[k]=Object.assign({},x,{n,q:0,a:0,lm:0});o.push(m[k])}m[k].q+=x.q;m[k].a+=x.a||0;m[k].lm+=x.lm||0});return o}
 
 // ---------- v3.8: one stock for items that do not depend on the shelf type ----------
 function NOSHT(){const o=new Set();T.forEach(t=>{if(!NOSH.includes(t.id))return;if(t.id=='ga')GAP.forEach(([n])=>o.add(GAN+' - '+n));else o.add(t.n)});return o}
