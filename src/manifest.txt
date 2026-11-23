@@ -63,6 +63,7 @@ js/updates/n2.4.js
 js/updates/n2.5.js
 js/updates/n2.6.js
 js/updates/n2.7.js
+js/updates/n2.8.js
 js/app/extras-v1.5.js
 js/app/users.js
 js/app/pdf-and-start.js
