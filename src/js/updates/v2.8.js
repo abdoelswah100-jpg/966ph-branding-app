@@ -1,5 +1,5 @@
 // ---------- v2.8: visit tracking (background location on the pharmacies' dates) ----------
-const VZ={in:0.15,out:0.3,stay:10,h0:7,h1:23},BG=()=>CP('BackgroundGeolocation');
+const VZ={in:0.15,out:0.3,stay:10,h0:9,h1:23},BG=()=>CP('BackgroundGeolocation');
 const vOnCfg=()=>DB.cfg.vtrk!==0&&!!BG();
 const vIn=(p,d)=>p.ds&&p.de?(p.ds<=d&&d<=p.de):p.ds?p.ds==d:p.de?p.de==d:false;
 const VK={br:'تنفيذ دعاية',mn:'صيانة',no:'مش النهارده'};

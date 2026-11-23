@@ -611,3 +611,11 @@ header{padding-top:calc(12px + var(--sat))}
 .hold>summary{color:#B45309}.holdr .bt{gap:6px}
 .csh .tt{display:flex;flex-wrap:wrap;gap:6px}.csh .tt button{white-space:normal;max-width:100%}
 .rshc.cxt{white-space:normal}
+
+/* 2.6 */
+.chip26{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}.chip26 button{flex:1 1 auto;min-width:0;white-space:normal;padding:7px 10px}
+.tlg{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.tlg button{min-width:0;white-space:normal}
+.rlx26{margin:6px 0;padding:6px 10px;border-radius:10px;background:rgba(35,119,74,.10);font-size:13px}.rlx26.bad{background:rgba(185,28,28,.10)}.rlx26 summary{cursor:pointer;overflow-wrap:anywhere}
+.cnt26{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}.cnt26 small{opacity:.85}
+.tl26{margin:10px 0}.bkg26>.mgb{padding-top:6px}
+.wcard textarea{width:100%;box-sizing:border-box}
