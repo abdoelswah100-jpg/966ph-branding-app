@@ -34,7 +34,7 @@ const _phImpGo26=phImpGo;phImpGo=function(q,fn){const h=fHash(JSON.stringify(q.p
 const _whAdd26=whAdd;whAdd=function(o,qty,typ,src,note){const x=_whAdd26.apply(this,arguments);if(x&&+x.qty<0){const s=wq(-x.qty);x.qty=0;whLog('adj',x,s,'fix','⚠ الرصيد ما كفّاش — ناقص '+s+' (اتسجل صفر)');try{toastT('⚠ «'+x.ty+(x.nm?' · '+x.nm:'')+'» الرصيد ما كفّاش — ناقص '+s)}catch(e){}}return x};
 function whFix26(){if(D26().neg||uStoreRO())return;const L=WU().filter(x=>+x.qty<0);L.forEach(x=>{const s=wq(-x.qty);x.qty=0;whLog('adj',x,s,'fix','تصحيح 2.6: الرصيد ما ينزلش تحت الصفر (كان −'+s+')')});D26().neg=1;if(L.length)sv()}
 // ---- 13) sticker rolls (Wall Sticker تخطيط / سي ثرو) deducted at execution
-const rlK=r=>r&&r.kd=='تخطيط'?{nm:'تخطيط',sec:r.sec||''}:r&&r.kd=='سي ثرو'?{nm:'سي ثرو',sec:''}:null;
+const rlK=r=>r&&r.kd=='ثلجي'?{nm:'ثلجي شفاف',sec:''}:r&&r.kd=='تخطيط'?{nm:'تخطيط',sec:r.sec||''}:r&&r.kd=='سي ثرو'?{nm:'سي ثرو',sec:''}:null;
 const rlKs=k=>k.nm+(k.sec?' '+k.sec:'');
 const rlLen=r=>{const h=+r.h||0,w=+r.w||0;if(!h||!w)return 0;const op=[];if(w<=100)op.push(h);if(h<=100)op.push(w);return op.length?Math.min(...op):h*w/100};
 function rlMeters(p,k){const o={};((p&&p.rows&&p.rows.ws)||[]).forEach(r=>{const y=rlK(r);if(!y)return;const n=k=='q'?(+r.q||0):k=='left'?(r.cx?0:Math.max(0,(+r.q||0)-(+r.x||0))):(+r.x||0);if(!n)return;const s=rlKs(y);o[s]=o[s]||{k:y,m:0};o[s].m=wq(o[s].m+rlLen(r)*n/100)});return o}
@@ -43,7 +43,7 @@ const rlStockOf=k=>wq(rlItems(k).reduce((a,x)=>a+(+x.qty||0),0));
 function rlTake(p,k,m){let left=m;rlItems(k).forEach(x=>{if(left<=1e-9||+x.qty<=0)return;const t=Math.min(left,+x.qty);whAdd(x,-t,'out','ph:'+p.no,'رول '+rlKs(k)+' — Wall Sticker (متنفذ)');left=wq(left-t)});return wq(m-left)}
 function rlAuto(p){if(!p||uStoreRO()||!uEditP(p))return;const X=rlMeters(p,'x');if(!p.m26r){p.rlx={};Object.keys(X).forEach(s=>p.rlx[s]=X[s].m);p.m26r=1;return}p.rlx=p.rlx||{};
  Object.keys(X).concat(Object.keys(p.rlx)).filter((s,i,a)=>a.indexOf(s)==i).forEach(s=>{const need=X[s]?X[s].m:0,done=+p.rlx[s]||0,d=wq(need-done);if(!d)return;
-  const k=X[s]?X[s].k:{nm:s.split(' ')[0]=='سي'?'سي ثرو':'تخطيط',sec:s.split(' ')[0]=='سي'?'':s.replace(/^تخطيط ?/,'')};
+  const k=X[s]?X[s].k:/^سي ثرو/.test(s)?{nm:'سي ثرو',sec:''}:/^ثلجي/.test(s)?{nm:'ثلجي شفاف',sec:''}:{nm:'تخطيط',sec:s.replace(/^تخطيط ?/,'')};
   if(d<0){const it=rlItems(k)[0]||{sh:-1,ty:RLTY,nm:k.nm,sec:k.sec,mat:'',size:'عرض 1 م'};whAdd(it,-d,'in','ph:'+p.no,'رول '+s+' — تصحيح (المتنفذ قل)');p.rlx[s]=need;return}
   const t=rlTake(p,k,d);if(t)p.rlx[s]=wq(done+t)})}
 const rlOwed=p=>{const X=rlMeters(p,'x'),o=[];Object.keys(X).forEach(s=>{const d=wq(X[s].m-(+((p.rlx||{})[s])||0));if(p.m26r&&d>0)o.push(s+' '+d+' م')});return o};
