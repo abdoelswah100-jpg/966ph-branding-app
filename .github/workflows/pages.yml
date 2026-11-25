@@ -34,5 +34,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      - name: Wait for the artifact to be listed (GitHub API lag)
+        run: sleep 25
       - id: dep
         uses: actions/deploy-pages@v4
