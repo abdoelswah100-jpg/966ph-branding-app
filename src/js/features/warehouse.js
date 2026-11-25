@@ -3,7 +3,7 @@ const WXT=['so'],NOSH=['ws','al','ab','dc','fr','c4','cm','ga','ds'];// made to 
 function WU(){DB.wh=DB.wh||[];DB.wlog=DB.wlog||[];if(DB.wh.some(x=>!x.m22))whFix22();if(DB.wh.some(x=>!x.m38))whFix38();if(DB.wh.some(x=>!x.m39))whFix39();DB.wh.forEach(x=>{if(!x.m19){if(x.ty=='Floor Header'&&x.sh==2&&x.mat=='ستيكر')x.mat=FHM[0];x.m19=1}if(!x.m19w){if(x.ty=='Wall Header'&&x.sh==2&&x.mat=='ستيكر')x.mat=FHM[0];x.m19w=1}});return DB.wh}
 const whNm=x=>x.sec&&String(x.nm||'').startsWith(x.sec)?String(x.nm):[x.sec,x.nm].filter(Boolean).join(' · ');
 const whKey=x=>[x.sh,x.ty,nk(x.nm),nk(x.sec),nk(x.mat),String(x.size||'').replace(/\s+/g,'')].join('|');
-const whUnit=ty=>ty=='Wall Header'||ty==RLTY?'متر':'قطعة';
+const whUnit=ty=>ty==RLTY?'متر':'قطعة';
 const wq=v=>Math.round((+v||0)*100)/100;
 const whLow=()=>WU().filter(x=>x.min!=null&&x.min!==''&&+x.qty<=+x.min).length;
 function whLog(typ,x,qty,src,note){WU();DB.wlog.unshift({at:nowIso(),typ,id:x.id,qty:wq(qty),src:src||'',note:note||'',nm:x.nm,ty:x.ty,size:x.size,sh:x.sh});DB.wlog=DB.wlog.slice(0,3000)}

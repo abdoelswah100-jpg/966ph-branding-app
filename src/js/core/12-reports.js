@@ -6,7 +6,7 @@ function sizeRows(P){const m={},ord=[];function k(n,sz,mat,q,a,ty,lm,st){const k
   for(const r of p.rows[t.id]||[]){const q=r.q!=null?+r.q:1,z=t.z(r,p.sh);
    if(t.id=='ga'){GAP.forEach(([n,f,z])=>k(GAN+' - '+n+gaX(r),z,GAM,f*q,0,t.n));continue}
    if(t.id=='eg'){const x=egAO(r,p.sh)?null:egSz(r,p.sh);if(x){if(egFh(r))k('End gandola - Header',x.h,x.hm,egRd(egFh(r)*q));if(egFs(r))k('End gandola - Side',x.sd,x.sm,egRd(egFs(r)*q));if(egFa(r))k('End gandola - Side Acrylic',x.sd,'أكريليك',egRd(egFa(r)*q))}if(/Acrylic Pocket/.test(z))SDS.forEach(([sd,n])=>{const c=egN(r,p.sh,sd);if(c)k('Side Acrylic Pocket',n,'أكريليك',c)});continue}
-   if(t.id=='al'){if(r.pc)k(t.n,'قطع أكريليك 30×30','اكرليك',q,0,t.n,0);else k(t.n,`${r.lh||'—'} ارتفاع الحروف`,'اكرليك',q);continue}
+   if(t.id=='al'){const am=r.mm==4||r.sec==HRI?'اكرليك أخضر 4 مم':'اكرليك';if(r.pc)k(t.n,'قطع أكريليك 30×30',am,q,0,t.n,0);else k(t.n,`${r.lh||'—'} ارتفاع الحروف`,am,q);continue}
    if(t.id=='fr'){k(t.n+' - '+(r.kd||'—'),szOf(z),mtOf(z),q,0,t.n);continue}
    if(t.id=='cm'){k(t.n,'A5','ستيكر',q);continue}
    if(t.id=='ws'){k('Wall Sticker','جميع الأقسام','ستيكر',q,t.m?t.m(r):0);continue}

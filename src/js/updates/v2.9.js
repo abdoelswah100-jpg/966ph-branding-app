@@ -74,11 +74,11 @@ function gdLine(btn){const o=gdS(),nat=CAPN()||GWEB();let t,c='';
  return `<div class="stb gdl"><small>☁️ Google Drive:</small><b class="${c}">${t}</b>${btn?`<button class="lnk" data-gdopen="1">الإعدادات ›</button>`:''}</div>`}
 // ---- merge (restore from Drive and the laptop's automatic read)
 const gdEmpty=v=>v==null||JSON.stringify(v).length<=24;
-function gdMerge(q,why){if(!q||!Array.isArray(q.ph))throw new Error('ملف مش نسخة 966Ph');snap(why||'قبل دمج نسخة من Google Drive');const res={add:0,upd:0,del:0,sec:[]};
+function gdMerge(q,why){if(!q||!Array.isArray(q.ph))throw new Error('ملف مش نسخة 966Ph');snap(why||'قبل دمج نسخة من Google Drive');const res={add:0,upd:0,del:0,sec:[],idm:{}};
  const ALL=()=>DB.ph.concat(HIDDB===DB?HID:[]),find=z=>ALL().find(x=>x.id==z.id)||ALL().find(x=>String(x.no)==String(z.no)&&x.mo==z.mo),put=(l,z)=>{let i=DB.ph.indexOf(l);if(i>=0){DB.ph[i]=z;return}i=HID.indexOf(l);if(i>=0)HID[i]=z};
  DB.del=DB.del||{};Object.keys(q.del||{}).forEach(id=>{const t2=q.del[id],l=ALL().find(x=>x.id==id);if(l&&(l.modAt||BASE)<=t2){DB.ph=DB.ph.filter(x=>x!==l);HID=HID.filter(x=>x!==l);res.del++}if(!(DB.del[id]>t2))DB.del[id]=t2});
  q.ph.forEach(z0=>{const z=JSON.parse(JSON.stringify(z0));mig(z);z.modAt=z.modAt||BASE;const td=DB.del[z.id];if(td&&td>=z.modAt)return;const l=find(z);
-  if(!l){DB.ph.push(z);res.add++;return}if((z.modAt||BASE)>(l.modAt||BASE)&&!syncEq(l,z)){z.id=l.id;put(l,z);res.upd++}});
+  if(!l){DB.ph.push(z);res.add++;return}if(l.id!=z.id)res.idm[z.id]=l.id;if((z.modAt||BASE)>(l.modAt||BASE)&&!syncEq(l,z)){z.id=l.id;put(l,z);res.upd++}});
  const uid=STO||U().id,qa=(q.cfg||{}).sat||{},la=DB.cfg.sat=DB.cfg.sat||{},qu=q.uw||{},src=k=>qu[uid]&&qu[uid][k]!==undefined?qu[uid][k]:q[k];
  const lp=gdS().pt||'';UST.forEach(k=>{const inc=src(k);if(inc===undefined||gdEmpty(inc))return;
   if((k=='cust'||k=='mnt')&&!gdEmpty(DB[k])){const nw=(qa[k]||'')>(la[k]||''),b0=JSON.stringify(DB[k]);gdItemMerge(k,DB[k],JSON.parse(JSON.stringify(inc)),nw);if(JSON.stringify(DB[k])!=b0)res.sec.push(k);if(nw)la[k]=qa[k];return}
@@ -91,7 +91,7 @@ const SECN={cust:'العهدة',mnt:'الصيانة',wh:'المخزن',wlog:'س�
 const gdResTxt=r=>`صيدليات: +${r.add} جديدة · ${r.upd} اتحدثت${r.del?' · '+r.del+' اتحذفت':''}${r.sec.length?' · أقسام: '+r.sec.map(k=>SECN[k]||k).join('، '):''}`;
 async function gdApply(q,mode,why){const EXR={imgs:q._imgs?Object.assign({},q._imgs,IMG):null,files:q._files,photos:q._photos};delete q._imgs;delete q._files;delete q._photos;
  if(mode=='replace'||!DB.ph.length){snap(why||'قبل استعادة من Google Drive');delete q.ver;delete q.at;delete q.device;DB=q;norm();sv();await restoreExtras(EXR);return 'اتعملت استعادة كاملة ('+DB.ph.length+' صيدلية)'}
- const r=gdMerge(q,why);if(EXR.imgs||EXR.files||EXR.photos)await restoreExtras(EXR);render();if(r.whc)setTimeout(()=>alert('⚠ المخزن اتعدّل على الجهازين قبل ما يتزامنوا، واتاخدت نسخة الجهاز التاني (الأحدث). راجع أرصدة المخزن، ولو فيه حركة ناقصة سجلها تاني أو رجّع من «نقاط الاستعادة».'),300);return gdResTxt(r)}
+ const r=gdMerge(q,why);exMap(EXR,r.idm);if(EXR.imgs||EXR.files||EXR.photos)await restoreExtras(EXR);render();if(r.whc)setTimeout(()=>alert('⚠ المخزن اتعدّل على الجهازين قبل ما يتزامنوا، واتاخدت نسخة الجهاز التاني (الأحدث). راجع أرصدة المخزن، ولو فيه حركة ناقصة سجلها تاني أو رجّع من «نقاط الاستعادة».'),300);return gdResTxt(r)}
 // ---- laptop: Google Drive for desktop folder (File System Access API)
 let GDH=null;
 async function gdlInit(){if(CAPN())return;try{await stPersist()}catch(e){}if(window.showDirectoryPicker){try{GDH=(await idbGet('gddir'))||null}catch(e){GDH=null}}if(!GDH){if(!DB.ph.length)stEmpty();else gdlRemind();return}gdRender();const ok=await gdlPerm(false);

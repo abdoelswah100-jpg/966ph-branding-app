@@ -1,6 +1,6 @@
 const EMO={ga:'🛒',ws:'🖼️',al:'🔠',wh:'🏷️',fh:'📏',ec:'📦',eg:'🛍️',md:'💊',dc:'✂️',saw:'🪟',saf:'🗄️',ds:'🚪',c4:'💚',fr:'🧊',cm:'📷',ab:'🔲'};
 const T=[
-{id:'ws',n:'Wall Sticker',f:[sel('sec','القسم',()=>WSS),sel('kd','النوع',()=>['لوجو','تخطيط','سي ثرو']),num('h','الارتفاع (سم)'),num('w','العرض (سم)'),Q,{k:'nt',l:'ملاحظات (اختياري)'}],
+{id:'ws',n:'Wall Sticker',f:[sel('sec','القسم',()=>WSS),sel('kd','النوع',()=>['تخطيط','لوجو','سي ثرو']),num('h','الارتفاع (سم)'),num('w','العرض (سم)'),Q,{k:'nt',l:'ملاحظات (اختياري)'}],
  z:r=>`${r.sec} · ${r.kd} · ${r.h}×${r.w} سم = ${(r.h*r.w/10000).toFixed(2)} م² للقطعة · ${SZ('mt.ws')}${r.nt?' · '+r.nt:''}`,m:r=>r.h*r.w*r.q/10000},
 {id:'wh',n:'Wall Header',f:[sel('sec','القسم',()=>S4.concat(['Pharmacy'])),sel('wt','النوع',r=>r.sec=='Beauty'?['WALL NORMAL','WALL WOOD Magnetic UNITS']:['WALL NORMAL']),sel('nm','المسمى',r=>wood(r)?['Hair colorants','Beauty Devices','Lenses']:nmOpts(r,NM[r.sec]||[])),sel('len','الطول / مقاس الخشب (سم)',(r,s)=>wood(r)?SZ('wh.wood'):s===2?['100']:SZ('wh.len')),Object.assign(sel('whm','المطلوب',()=>FHM),{hide:(d,s)=>rsh(d,s)!==2}),Q],
  z:(r,s)=>wood(r)?`${r.sec} · ${r.nm} · ${r.wt} · ${r.len} سم · ${s==2?whmOf(r):SZ('mt.wh')}`:`${r.sec} · ${r.nm} · ${SZ('wh.h')[s]}×${r.len} سم · ${s==2?whmOf(r):SZ('mt.wh')}`},
