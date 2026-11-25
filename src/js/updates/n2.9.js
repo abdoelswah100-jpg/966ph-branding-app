@@ -155,13 +155,6 @@ function mgXlsx(src){const txt=e=>e?e.textContent.replace(/\s+/g,' ').trim():'',
   {n:'xl/drawings/drawing1.xml',d:drawing},{n:'xl/drawings/_rels/drawing1.xml.rels',d:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="${NS}/package/2006/relationships"><Relationship Id="rId1" Type="${NS}/officeDocument/2006/relationships/image" Target="../media/image1.png"/></Relationships>`},{n:'xl/media/image1.png',d:img});
  return zipBlob(f,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')}
 
-// ---- management report: a swapped item (the client asked for another one) is not counted — its replacement is in the extra items
-const noSw=r=>!(r&&r.cx&&r.sw);
-const mrNoSw=o=>{const n={};Object.keys(o||{}).forEach(k=>{n[k]=Array.isArray(o[k])?o[k].filter(noSw):o[k]});return n};
-const _capPcs29=capPcs;capPcs=function(p,id,k){const a=((p&&p.rows)||{})[id]||[];if(k!='q'||a.every(noSw))return _capPcs29.apply(this,arguments);return _capPcs29.call(this,Object.assign({},p,{rows:Object.assign({},p.rows,{[id]:a.filter(noSw)})}),id,k)};
-// caps: only the count (the sides are already in the table above)
-capTbl=function(L,h){const v=L.filter(x=>!h.includes(x._idx));if(!v.length)return '';const x=v[0];return `<h3>${CPNM}</h3><div class="sc"><table><tr><th>البند</th><th>العدد</th><th class="act">إجراء</th></tr><tr class="tot"><td>${CPNM}</td><td>${x.q} قطعة</td><td class="act"><button data-rdel="base:${x._idx}" title="حذف الصف">حذف</button></td></tr></table></div>`};
-
 // ---- clicks and changes
 const _v24Click29=v24Click;v24Click=function(d,b){
  if(d.hr29){hrOpen(d.hr29);return 1}
