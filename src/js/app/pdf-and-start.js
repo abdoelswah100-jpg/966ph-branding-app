@@ -16,13 +16,13 @@ function pdfLayout(src0,ttl){const src=pdfClone(src0);trNode(src);const host=doc
  np();
  for(const blk of [...src.children]){body.appendChild(blk);if(fits())continue;body.removeChild(blk);
   const tb=blk.tagName=='TABLE'?blk:(blk.children.length==1&&blk.firstElementChild.tagName=='TABLE'?blk.firstElementChild:null);
-  if(tb&&tb.tBodies.length){const head=tb.tHead,rows=[...tb.tBodies].flatMap(b=>[...b.rows]);
-   const mk=()=>{const t=tb.cloneNode(false);if(head)t.appendChild(head.cloneNode(true));const bd=document.createElement('tbody');t.appendChild(bd);let el=t;if(blk!==tb){el=blk.cloneNode(false);el.appendChild(t)}return{el,bd}};
+  if(tb&&tb.tBodies.length){const head=tb.tHead;let rows=[...tb.tBodies].flatMap(b=>[...b.rows]);const hr=!head&&rows[0]&&[...rows[0].cells].every(c=>c.tagName=='TH')?rows[0]:null,n0=hr?1:0;if(hr)rows=rows.slice(1);
+   const mk=()=>{const t=tb.cloneNode(false);if(head)t.appendChild(head.cloneNode(true));const bd=document.createElement('tbody');if(hr)bd.appendChild(hr.cloneNode(true));t.appendChild(bd);let el=t;if(blk!==tb){el=blk.cloneNode(false);el.appendChild(t)}return{el,bd}};
    let cur=mk();body.appendChild(cur.el);
    for(const r of rows){cur.bd.appendChild(r);if(fits())continue;
-    if(cur.bd.rows.length==1&&body.children.length==1)continue;
+    if(cur.bd.rows.length==n0+1&&body.children.length==1)continue;
     cur.bd.removeChild(r);
-    if(!cur.bd.rows.length){body.removeChild(cur.el);const c=carry();np();if(c)body.appendChild(c)}else np();
+    if(cur.bd.rows.length<=n0){body.removeChild(cur.el);const c=carry();np();if(c)body.appendChild(c)}else np();
     cur=mk();body.appendChild(cur.el);cur.bd.appendChild(r)}
   }else{if(body.children.length){const c=carry();np();if(c)body.appendChild(c)}body.appendChild(blk)}}
  const tt=esc(ttl||pdfTitle()),dt=new Date().toLocaleDateString('en-GB');
