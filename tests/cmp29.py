@@ -2,7 +2,7 @@
 import json,sys,difflib
 from playwright.sync_api import sync_playwright
 W='/home/claude/work/';A,B=sys.argv[1],sys.argv[2]
-DATA=[('bk1125',W+'bk1125/data.json'),('bk1123',W+'bk1123/data.json'),('bk1116',W+'bk1116/data.json'),('bk1115','/mnt/user-data/attachments/7db5e8a6-d495-596a-8941-a726d2c69b08/b536172f-966-backup-2026-11-15.json')]
+DATA=[('bk1127',W+'bk1127/raw.json'),('bk1125',W+'bk1125/data.json'),('bk1123',W+'bk1123/data.json'),('bk1116',W+'bk1116/data.json'),('bk1115','/mnt/user-data/attachments/7db5e8a6-d495-596a-8941-a726d2c69b08/b536172f-966-backup-2026-11-15.json')]
 VIEWS=["{v:'home'}","{v:'sum'}","{v:'mo'}","{v:'wh'}","{v:'rcv'}","{v:'prep'}","{v:'avl'}","{v:'cust'}","{v:'mnt'}","{v:'set'}","{v:'rte'}","{v:'plc'}"]
 def grab(f,data):
   o={}

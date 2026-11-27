@@ -1,6 +1,6 @@
 const SZD={
 'wh.h':['20','20','17.5','20','17'],'wh.len':['100','80','50'],'wh.wood':['24×85','19×85'],
-'fh.ws':'14.5×56.5','fh.wl':'14.5×76.5','fh.s':['11.5×57','14×59','17.5×100','12×53.5','11.5×57'],'fh.l':'11.5×76',
+'fh.ws':'14.5×56.5','fh.wl':'14.5×76.5','fh.s':['11.5×57','14×59','17.5×100','12×53.5','11.5×57'],'fh.l':'11.5×76','fh.ln':['11.5×76','14×76','11.5×76','11.5×76','11.5×76'],
 'ec.0':['صغير 64×111','كبير 81×123'],'ec.1':['صغير 64×111','كبير 81×123'],'ec.2':['صغير 64×111','كبير 81×123'],'ec.3':['صغير 67×117','كبير 88×132'],'ec.4':['صغير 70.5×116','كبير 80×122','كبير 91.5×122'],
 'eg.hs':['61×22','61×22','50×66','62×22','63.8×28.3'],'eg.hl':['77×22','77×22','50×66','86×22','89×28'],
 'eg.ss':['25×101','25×101','30×120','124×32','90×22'],'eg.sl':['25×101','25×101','30×120','135×32','103×33'],
@@ -13,6 +13,8 @@ const SZD={
 'abs.Decorative nail':'—|مسمار','abs.Acrylic board A3':'A3|أكريليك','abs.Acrylic board A4':'A4|أكريليك','abs.Wasfaty board':'48×80|أكريليك','abs.Pharmacy hours QR · دوام الصيدلية':'30×40|أكريليك','abs.Acrylic board pockets 5':'50×111|أكريليك','abs.Acrylic board pockets 4':'55×80|أكريليك','abs.No smoking acrylic':'15×15|أكريليك',
 'mt.fhx':['ستيكر + تصنيع أكريليك','ستيكر فقط'],'mt.ws':'ستيكر','mt.so':'Sticker outdoor + Laminate','mt.wh':'ستيكر','mt.fh':['باك لايت','باك لايت','ستيكر','باك لايت','باك لايت'],'mt.ec':'باك لايت','mt.egh':['باك لايت','باك لايت','ستيكر','باك لايت','باك لايت'],'mt.egs':['ستيكر','ستيكر','باك لايت','ستيكر','ستيكر'],'mt.md':'باك لايت','mt.sa':'أكريليك','mt.al':'أكريليك 8 مم','mt.st':'ستيكر'};
 const SZ=k=>{const o=DB&&DB.cfg&&DB.cfg.sz&&DB.cfg.sz[k];return o!=null?o:SZD[k]};
+// Floor Header «كبير» per shelf type (3.2); an old single override of fh.l still applies to every shelf but New Turkish
+const fhL=s=>{const o=DB&&DB.cfg&&DB.cfg.sz||{};if(o['fh.ln']&&o['fh.ln'][s]!=null)return o['fh.ln'][s];if(o['fh.l']!=null&&s!=1)return o['fh.l'];return SZD['fh.ln'][s]||SZD['fh.l']};
 const ABV=i=>{const v=String(SZ('abs.'+i)||'—|—').split('|');return[(v[0]||'—').trim(),(v[1]||'—').trim()]};
 const ALLM=()=>{const m=new Set();Object.keys(SZD).forEach(k=>{if(k.startsWith('mt.'))[].concat(SZ(k)).forEach(x=>m.add(String(x).trim()));if(k.startsWith('abs.'))m.add(ABV(k.slice(4))[1])});m.delete('—');m.delete('');return[...m].sort((a,b)=>b.length-a.length)};
 function noCk(R){Object.values(R||{}).forEach(a=>{if(Array.isArray(a))a.forEach(r=>{delete r.ck;delete r.r;delete r.x})});return R}

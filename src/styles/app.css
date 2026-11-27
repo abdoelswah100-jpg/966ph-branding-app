@@ -619,3 +619,5 @@ header{padding-top:calc(12px + var(--sat))}
 .cnt26{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:baseline}.cnt26 small{opacity:.85}
 .tl26{margin:10px 0}.bkg26>.mgb{padding-top:6px}
 .wcard textarea{width:100%;box-sizing:border-box}
+.sp32{margin-top:8px;display:flex;flex-direction:column;gap:6px;width:100%}.sp32 small{overflow-wrap:anywhere}.sp32 .spr{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.sp32 .spn{width:64px;min-width:0}.sp32 button{min-width:0;white-space:normal}
+.spt{background:rgba(242,183,5,.18)}.tp32{margin:6px 0}.tp32 button{width:100%;white-space:normal}.sxe32{margin-top:6px}.wm32 table{font-size:12px}

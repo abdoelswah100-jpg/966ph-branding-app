@@ -18,7 +18,7 @@ function cmpHtml(){const ms=[...new Set(DB.ph.map(p=>p.mo))].sort();
  return DB.ph.length?h:'<p class="em">لا توجد بيانات.</p>'}
 const SDEF=(()=>{const a=[],h=g=>a.push({g}),d=(k,l,t)=>a.push({k,l,t});
  h('Wall Header');d('wh.h','الارتفاع حسب نوع الرف (سم)','shelf');d('wh.len','الأطوال المتاحة (سطر لكل خيار)','list');d('wh.wood','مقاسات WALL WOOD (سطر لكل خيار)','list');
- h('Floor Header');d('fh.s','الصغير / القياسي حسب نوع الرف','shelf');d('fh.l','الكبير (Health و OTC)','one');
+ h('Floor Header');d('fh.s','الصغير / القياسي حسب نوع الرف','shelf');d('fh.ln','الكبير (Health و OTC) حسب نوع الرف','shelf');
  h('End cap');SH.forEach((n,i)=>d('ec.'+i,n+' — خيارات الحجم (سطر لكل خيار، مثال: صغير 64×111)','list'));
  h('End gandola');d('eg.hs','Header الصغير','shelf');d('eg.hl','Header الكبير','shelf');d('eg.ss','Side الصغير','shelf');d('eg.sl','Side الكبير','shelf');
  h('Medicated');d('md.h','Header','one');d('md.s','Side حسب نوع الرف','shelf');
